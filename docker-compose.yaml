@@ -1,0 +1,10 @@
+services:
+    backend:
+        build: ./src/backend
+        container_name: backend
+        working_dir: /app
+        ports:
+            - "8001:8001"
+        volumes:
+            - ./src/backend:/app
+        command: sh -c "dotnet run --project krasnoludki"
