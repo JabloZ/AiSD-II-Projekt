@@ -6,14 +6,16 @@ Dzięki konteneryzacji działa on międzyplatformowo korzystając z **DOCKER**. 
 #### Linux
 ```python
 mkdir project
+cd project
 git clone https://github.com/JabloZ/AiSD-II-Projekt.git
-docker compose up
+docker compose up --build
 ```
 
 | Technology | Used      |
 | ------------- | ------ |
-| C#            | ✅ Yes |
-| Docker        | ✅ Yes |
+| C#            | ✅ Tak |
+| Docker        | ✅ Tak |
+| PostgreSQL    | ✅ Tak |
 
 
 
