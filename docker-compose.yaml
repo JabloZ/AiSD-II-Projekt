@@ -7,6 +7,8 @@ services:
             - "8001:8001"
         volumes:
             - ./src/backend:/app
+        environment:
+            - CONNECTION_STRING=Host=${DB_HOST};Port=${DB_PORT};Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
         command: sh -c "dotnet run --project krasnoludki"
     db: 
         build: ./src/db
