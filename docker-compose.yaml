@@ -7,4 +7,19 @@ services:
             - "8001:8001"
         volumes:
             - ./src/backend:/app
+        environment:
+            - CONNECTION_STRING=Host=${DB_HOST};Port=${DB_PORT};Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
         command: sh -c "dotnet run --project krasnoludki"
+    db: 
+        build: ./src/db
+        container_name: krasnoludki_db
+        working_dir: /app
+        ports:
+            - "5434:5432"
+        volumes:
+            - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+        environment:
+            - POSTGRES_USER=${DB_USER}
+            - POSTGRES_PASSWORD=${DB_PASSWORD}
+            - POSTGRES_DB=${DB_NAME}
+
