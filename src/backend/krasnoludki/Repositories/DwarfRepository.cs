@@ -9,23 +9,21 @@ namespace krasnoludki.Repositories
             return !dwarf.DepositAssigned;
         }
 
-        public double CalculateEfficiency(Dwarf dwarf, Deposit deposit)
+        // Przekazanie preferencji krasnoludka do weryfikacji z minerałem
+        public double CalculateEfficiency(Dwarf dwarf, Preference preference, Deposit deposit)
         {
-            // Logika wyliczania wydajności na podstawie preferencji i dystansu
-            if (dwarf.Preference.Mineral == deposit.Mineral)
+            if (preference != null && preference.MineralId == deposit.MineralId)
             {
-                return dwarf.Volume * dwarf.Preference.Multiplier;
+                return dwarf.Volume * preference.Multiplier;
             }
             return dwarf.Volume;
         }
 
-        public void AssignTo(Dwarf dwarf, MapObject target)
+        public void AssignTo(Dwarf dwarf, Deposit deposit)
         {
-            if (target is Deposit deposit)
-            {
-                dwarf.AssignedDeposit = deposit;
-                dwarf.DepositAssigned = true;
-            }
+            dwarf.DepositId = deposit.Id;
+            dwarf.AssignedDeposit = deposit;
+            dwarf.DepositAssigned = true;
         }
     }
 }

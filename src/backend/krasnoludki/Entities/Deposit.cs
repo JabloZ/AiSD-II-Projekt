@@ -1,19 +1,23 @@
 namespace krasnoludki.Entities
 {
-    public class Deposit : MapObject
+    public class Deposit
     {
-        public int Mineral { get; set; }
-        public int Size { get; set; }
-        public int Taken { get; set; }
-        public string ImagePath { get; set; }
+        public int Id { get; set; }
+        public int MineralId { get; set; }
+        public int Capacity { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
 
-        public Deposit(int locationX, int locationY, int mineral, int size, int taken, string imagePath) 
-            : base(locationX, locationY)
+        // Właściwość nawigacyjna
+        public Mineral? Mineral { get; set; } 
+
+        public Deposit(int id, int mineralId, int capacity, int x, int y)
         {
-            Mineral = mineral;
-            Size = size;
-            Taken = taken;
-            ImagePath = imagePath;
+            Id = id;
+            MineralId = mineralId;
+            Capacity = capacity;
+            X = x;
+            Y = y;
         }
     }
 }

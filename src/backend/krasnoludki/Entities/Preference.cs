@@ -2,12 +2,14 @@ namespace krasnoludki.Entities
 {
     public class Preference
     {
-        public int Mineral { get; set; }
-        public float Multiplier { get; set; }
+        public int DwarfId { get; set; } // Z tabeli Preferences [cite: 671]
+        public int MineralId { get; set; } // Z tabeli Preferences [cite: 671]
+        public float Multiplier { get; set; } // Z tabeli Preferences [cite: 671]
 
-        public Preference(int mineral, float multiplier)
+        public Preference(int dwarfId, int mineralId, float multiplier)
         {
-            Mineral = mineral;
+            DwarfId = dwarfId;
+            MineralId = mineralId;
             Multiplier = multiplier;
         }
     }

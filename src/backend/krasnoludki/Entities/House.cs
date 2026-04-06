@@ -1,13 +1,16 @@
 namespace krasnoludki.Entities
 {
-    public class House : MapObject
+    public class House
     {
-        public string ImagePath { get; set; }
+        public int Id { get; set; }
+        public int X { get; set; }
+        public int Y { get; set; }
 
-        public House(int locationX, int locationY, string imagePath) 
-            : base(locationX, locationY)
+        public House(int id, int x, int y)
         {
-            ImagePath = imagePath;
+            Id = id;
+            X = x;
+            Y = y;
         }
     }
 }

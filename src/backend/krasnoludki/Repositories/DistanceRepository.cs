@@ -1,15 +1,15 @@
-using krasnoludki.Entities;
 using System;
+using krasnoludki.Entities;
 
 namespace krasnoludki.Repositories
 {
     public class DistanceRepository
     {
-        public int ObliczSciezke(House house, Deposit deposit)
+        public int CalculateDistance(House house, Deposit deposit)
         {
-            // Obliczenie dystansu np. metodą euklidesową lub Manhattan
-            int diffX = house.LocationX - deposit.LocationX;
-            int diffY = house.LocationY - deposit.LocationY;
+            // Korzystamy bezpośrednio ze współrzędnych x i y
+            int diffX = house.X - deposit.X;
+            int diffY = house.Y - deposit.Y;
             return (int)Math.Sqrt((diffX * diffX) + (diffY * diffY));
         }
     }
