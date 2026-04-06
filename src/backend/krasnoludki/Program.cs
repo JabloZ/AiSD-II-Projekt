@@ -1,4 +1,4 @@
-﻿// See https://aka.ms/new-console-template for more information
+﻿
 using krasnoludki.db;
 namespace Start{
     class Start{
