@@ -6,13 +6,19 @@ namespace krasnoludki.Repositories
     {
         public string GenerateImage(Map map)
         {
-            // Logika renderowania mapy i zwracania np. stringa w formacie Base64 lub ścieżki
+            // Logika renderowania mapy
             return "sciezka_do_wygenerowanej_mapy.png";
         }
 
-        public void AssignToMap(Map map, MapObject mapObject)
+        // Oddzielne metody dla konkretnych encji z bazy
+        public void AddHouseToMap(Map map, House house)
         {
-            map.MapObjects.Add(mapObject);
+            map.Houses.Add(house);
+        }
+
+        public void AddDepositToMap(Map map, Deposit deposit)
+        {
+            map.Deposits.Add(deposit);
         }
     }
 }
