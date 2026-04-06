@@ -1,7 +1,7 @@
 using krasnoludki.Entities;
 using krasnoludki.db;
 using Npgsql;
-
+using Dapper;
 namespace krasnoludki.Repositories
 {
     public class DepositRepository
@@ -22,7 +22,18 @@ namespace krasnoludki.Repositories
                     return read.GetInt32(0);
                 }
                 return -1;
-            
+        }
+        public async Task<int> GetMineral2(Deposit deposit){
+            //Tutaj propozycja czegos pomiedzy pisaniem tych using async await jak u gory a EF core ktore zjadloby caly projekt - czyli Dapper
+            var cur= new DatabaseConn();
+            using var conn= await cur.DbConnect();
+
+            var p = new DynamicParameters();
+            p.Add("p", deposit.Id);
+
+            const string command = "SELECT mineral_id FROM Deposits WHERE id = @p";
+            int result=await conn.QueryFirstOrDefaultAsync<int>(command, p); 
+            return result;
         }
     }
 }
