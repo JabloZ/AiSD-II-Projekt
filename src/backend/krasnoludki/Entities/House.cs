@@ -2,9 +2,9 @@ namespace krasnoludki.Entities
 {
     public class House
     {
-        public int Id { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
+        public int Id { get; init; }
+        public int X { get; init; }
+        public int Y { get; init; }
 
         public House(int id, int x, int y)
         {

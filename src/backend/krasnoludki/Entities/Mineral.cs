@@ -2,8 +2,8 @@ namespace krasnoludki.Entities
 {
     public class Mineral
     {
-        public int Id { get; set; } // Z tabeli Minerals [cite: 668]
-        public string Name { get; set; } // Z tabeli Minerals [cite: 668]
+        public int Id { get; init; }
+        public string Name { get; init; }
 
         public Mineral(int id, string name)
         {
