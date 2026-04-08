@@ -29,5 +29,5 @@ services:
         working_dir: /app
         volumes:
             - ./src/generate:/app
-        command: python generate.py
+        command: tail -f /dev/null
 
