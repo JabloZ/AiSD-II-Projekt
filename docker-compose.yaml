@@ -22,11 +22,12 @@ services:
             - POSTGRES_USER=${DB_USER}
             - POSTGRES_PASSWORD=${DB_PASSWORD}
             - POSTGRES_DB=${DB_NAME}
+    
     generator:
-        build: .
+        build: ./src/generate
         container_name: generator_skrypt
         working_dir: /app
         volumes:
-            - ./src:/app
+            - ./src/generate:/app
         command: python generate.py
 
