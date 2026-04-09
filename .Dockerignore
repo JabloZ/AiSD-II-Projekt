@@ -1,0 +1,8 @@
+.env
+*.sln
+bin
+obj
+build
+Dockerfile
+docker-compose.yaml
+.git
