@@ -7,7 +7,7 @@ namespace krasnoludki.test{
         public static async Task<int> Func(){
             Deposit zloto = new Deposit(1,1,1,1,1);
             DepositRepository repo = new DepositRepository();
-            int mineral=await repo.GetMineral2(zloto);
+            int mineral=await repo.GetMineral(zloto);
             
             return mineral;
         }
