@@ -51,5 +51,15 @@ namespace krasnoludki.Repositories
             int pos_y = (int)result.y;
             return (pos_x, pos_y);
         }
+        public async Task<List<Deposit>> GetDeposits()
+        {
+            var cur=new DatabaseConn();
+            using var conn = await cur.DbConnect();
+            const string command= "SELECT * from Deposits";
+            var deposits = await conn.QueryAsync<Deposit>(command);
+        
+            return deposits.ToList();
+        }
+
     }
 }
