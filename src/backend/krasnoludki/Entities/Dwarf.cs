@@ -1,3 +1,6 @@
+
+using System.Collections;
+
 namespace krasnoludki.Entities
 {
     public class Dwarf
@@ -16,6 +19,7 @@ namespace krasnoludki.Entities
         // Właściwości nawigacyjne
         public House? House { get; set; }
         public Deposit? Deposit { get; set; }
+        public Dictionary<int, float>? preferences{ get; set; } 
         public Dwarf() { } //Pusty konstruktor dla dappera 
         public Dwarf(int id, string name, int loudness, bool depositAssigned,int houseId, int? depositId = null)
         {
