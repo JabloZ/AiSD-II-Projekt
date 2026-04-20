@@ -131,7 +131,7 @@ namespace krasnoludki.Algorithms
                     curr = edge.From;
                 }
 
-                // Przepychamy krasnoludka i aktualizujemy sieć rezydualną!
+                // Przepychamy krasnoludka i aktualizujemy sieć rezydualną
                 curr = sink;
                 while (curr != source)
                 {
