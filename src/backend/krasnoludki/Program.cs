@@ -16,8 +16,8 @@ namespace Start {
             foreach (var d in dwarfs)
             {
                 Console.WriteLine($"Krasnolud: {d.Name}");
-            }
-            return 0;*/
+            }*/
+            return 0;
         }
     }
 }
