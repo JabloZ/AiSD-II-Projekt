@@ -2,9 +2,9 @@ namespace krasnoludki.Entities
 {
     public class Preference
     {
-        public int DwarfId { get; set; }
-        public int MineralId { get; set; }
-        public float Multiplier { get; set; }
+        public int DwarfId { get; init; }
+        public int MineralId { get; init; }
+        public float Multiplier { get; init; }
 
         public Preference(int dwarfId, int mineralId, float multiplier)
         {

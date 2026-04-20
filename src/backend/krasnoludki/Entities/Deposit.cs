@@ -2,11 +2,11 @@ namespace krasnoludki.Entities
 {
     public class Deposit
     {
-        public int Id { get; set; }
-        public int MineralId { get; set; }
-        public int Capacity { get; set; }
-        public int X { get; set; }
-        public int Y { get; set; }
+        public int Id { get; init; }
+        public int MineralId { get; init; }
+        public int Capacity { get; init; }
+        public int X { get; init; }
+        public int Y { get; init; }
 
         // Właściwość nawigacyjna
         public Mineral? Mineral { get; set; } 
