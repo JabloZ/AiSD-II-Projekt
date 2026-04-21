@@ -4,3 +4,5 @@ obj
 *.slnx
 .vscode
 .env
+dane.txt
+test
