@@ -8,11 +8,11 @@ namespace krasnoludki.Repositories
     {
         public async Task<List<House>> GetHouses()
         {
-            var cur=new DatabaseConn();
-            using var conn = await cur.DbConnect();
-            const string command= "SELECT * from Houses";
-            var houses = await conn.QueryAsync<House>(command);
-            return houses.ToList();
+            var Cur=new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
+            const string Command= "SELECT * from Houses";
+            var Houses = await Conn.QueryAsync<House>(Command);
+            return Houses.ToList();
         }
     }
 }

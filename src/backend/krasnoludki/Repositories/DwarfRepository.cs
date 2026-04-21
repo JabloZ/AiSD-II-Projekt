@@ -8,12 +8,12 @@ namespace krasnoludki.Repositories{
 
         public async Task<List<Dwarf>> GetDwarfs()
         {
-            var cur=new DatabaseConn();
-            using var conn = await cur.DbConnect();
-            const string command= "SELECT Id, Name, Loudness, DepositAssigned, houseId, depositId from Dwarfs";
-            var dwarfs = await conn.QueryAsync<Dwarf>(command);
+            var Cur=new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
+            const string Command= "SELECT Id, Name, Loudness, DepositAssigned, houseId, depositId from Dwarfs";
+            var Dwarfs = await Conn.QueryAsync<Dwarf>(Command);
         
-            return dwarfs.ToList();
+            return Dwarfs.ToList();
         }
     }
 }
@@ -26,13 +26,13 @@ CREATE TABLE Dwarfs(
     house_id INT REFERENCES House(id),
     deposit_id INT NULL REFERENCES Deposits(id) 
 );
-            var cur = new DatabaseConn();
-            using var conn = await cur.DbConnect();
+            var Cur = new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
 
-            var p = new DynamicParameters();
-            p.Add("p", deposit.Id);
+            var P = new DynamicParameters();
+            P.Add("p", Deposit.Id);
 
-            const string command = "SELECT mineral_id FROM Deposits WHERE id = @p";
-            int result = await conn.QueryFirstOrDefaultAsync<int>(command, p);
-            return result;
+            const string Command = "SELECT mineral_id FROM Deposits WHERE id = @p";
+            int Result = await Conn.QueryFirstOrDefaultAsync<int>(Command, P);
+            return Result;
 */

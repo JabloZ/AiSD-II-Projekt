@@ -9,11 +9,11 @@ namespace krasnoludki.Repositories
         public async Task<List<Preference>> GetPreferences()
         {
             //niedokonczone
-            var cur = new DatabaseConn();
-            using var conn = await cur.DbConnect();
-            const string command = "SELECT * from Houses";
-            var preferences = await conn.QueryAsync<Preference>(command);
-            return preferences.ToList();
+            var Cur = new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
+            const string Command = "SELECT * from Houses";
+            var Preferences = await Conn.QueryAsync<Preference>(Command);
+            return Preferences.ToList();
         }
         
     }

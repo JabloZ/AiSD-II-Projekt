@@ -7,58 +7,58 @@ namespace krasnoludki.Repositories
     public class DepositRepository
     {
         // Przekazujemy z bazy ilość aktualnie przypisanych krasnoludków do tej kopalni
-        public bool CanAssign(Deposit deposit, int currentAssignedDwarfsCount)
+        public bool CanAssign(Deposit Deposit, int CurrentAssignedDwarfsCount)
         {
-            return currentAssignedDwarfsCount < deposit.Capacity;
+            return CurrentAssignedDwarfsCount < Deposit.Capacity;
         }
         //get capacity
 
-        public async Task<int> GetMineral(Deposit deposit)
+        public async Task<int> GetMineral(Deposit Deposit)
         {
             //Tutaj propozycja czegos pomiedzy pisaniem tych using async await jak u gory a EF core ktore zjadloby caly projekt - czyli Dapper
-            var cur = new DatabaseConn();
-            using var conn = await cur.DbConnect();
+            var Cur = new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
 
-            var p = new DynamicParameters();
-            p.Add("p", deposit.Id);
+            var P = new DynamicParameters();
+            P.Add("p", Deposit.Id);
 
-            const string command = "SELECT mineral_id FROM Deposits WHERE id = @p";
-            int result = await conn.QueryFirstOrDefaultAsync<int>(command, p);
-            return result;
+            const string Command = "SELECT mineral_id FROM Deposits WHERE id = @p";
+            int Result = await Conn.QueryFirstOrDefaultAsync<int>(Command, P);
+            return Result;
         }
-        public async Task<int> GetCapacity(Deposit deposit)
+        public async Task<int> GetCapacity(Deposit Deposit)
         {
-            var cur = new DatabaseConn();
-            using var conn = await cur.DbConnect();
-            var p = new DynamicParameters();
-            p.Add("p", deposit.Id);
-            const string command = "SELECT capacity FROM Deposits WHERE id = @p";
-            int result = await conn.QueryFirstOrDefaultAsync<int>(command, p);
-            return result;
+            var Cur = new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
+            var DynamicParameters = new DynamicParameters();
+            DynamicParameters.Add("p", Deposit.Id);
+            const string Command = "SELECT capacity FROM Deposits WHERE id = @p";
+            int Result = await Conn.QueryFirstOrDefaultAsync<int>(Command, DynamicParameters);
+            return Result;
         }
-        public async Task<(int,int)> GetPosition(Deposit deposit)
+        public async Task<(int,int)> GetPosition(Deposit Deposit)
         {
             
-            var cur = new DatabaseConn();
-            using var conn = await cur.DbConnect();
+            var Cur = new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
 
-            var p = new DynamicParameters();
-            p.Add("p", deposit.Id);
+            var DynamicParameters = new DynamicParameters();
+            DynamicParameters.Add("p", Deposit.Id);
             
-            const string command = "SELECT x,y FROM Deposits WHERE id = @p";
-            var result = await conn.QuerySingleAsync(command, p);
-            int pos_x = (int)result.x;
-            int pos_y = (int)result.y;
-            return (pos_x, pos_y);
+            const string Command = "SELECT x,y FROM Deposits WHERE id = @p";
+            var Result = await Conn.QuerySingleAsync(Command, DynamicParameters);
+            int PosX = (int)Result.x;
+            int PosY = (int)Result.y;
+            return (PosX, PosY);
         }
         public async Task<List<Deposit>> GetDeposits()
         {
-            var cur=new DatabaseConn();
-            using var conn = await cur.DbConnect();
-            const string command= "SELECT * from Deposits";
-            var deposits = await conn.QueryAsync<Deposit>(command);
+            var Cur=new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
+            const string Command= "SELECT * from Deposits";
+            var Deposits = await Conn.QueryAsync<Deposit>(Command);
         
-            return deposits.ToList();
+            return Deposits.ToList();
         }
 
     }

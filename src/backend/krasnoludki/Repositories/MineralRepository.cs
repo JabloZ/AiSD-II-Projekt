@@ -8,11 +8,11 @@ namespace krasnoludki.Repositories
     {
         public async Task<List<Mineral>> GetMinerals()
         {
-            var cur=new DatabaseConn();
-            using var conn = await cur.DbConnect();
-            const string command= "SELECT * from Minerals";
-            var minerals = await conn.QueryAsync<Mineral>(command);
-            return minerals.ToList();
+            var Cur=new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
+            const string Command= "SELECT * from Minerals";
+            var Minerals = await Conn.QueryAsync<Mineral>(Command);
+            return Minerals.ToList();
         }
     }
 }
