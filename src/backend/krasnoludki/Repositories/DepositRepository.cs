@@ -19,11 +19,11 @@ namespace krasnoludki.Repositories
             var Cur = new DatabaseConn();
             using var Conn = await Cur.DbConnect();
 
-            var P = new DynamicParameters();
-            P.Add("p", Deposit.Id);
+            var DynamicParameters = new DynamicParameters();
+            DynamicParameters.Add("p", Deposit.Id);
 
             const string Command = "SELECT mineral_id FROM Deposits WHERE id = @p";
-            int Result = await Conn.QueryFirstOrDefaultAsync<int>(Command, P);
+            int Result = await Conn.QueryFirstOrDefaultAsync<int>(Command, DynamicParameters);
             return Result;
         }
         public async Task<int> GetCapacity(Deposit Deposit)
