@@ -12,13 +12,13 @@ namespace krasnoludki.Algorithms
         private GraphNode source = null!;
         private GraphNode sink = null!;
 
-        public void SolveAssignments(List<Dwarf> dwarfs, List<Deposit> deposits, List<Preference> preferences)
+        public void SolveAssignments(List<Dwarf> dwarfs, List<Deposit> deposits)
         {
-            BuildGraph(dwarfs, deposits, preferences);
+            BuildGraph(dwarfs, deposits);
             CalculateMinCostMaxFlow();
         }
 
-        private void BuildGraph(List<Dwarf> dwarfs, List<Deposit> deposits, List<Preference> preferences)
+        private void BuildGraph(List<Dwarf> dwarfs, List<Deposit> deposits)
         {
             nodes.Clear();
             source = new GraphNode("Source", GraphNodeType.Source);
@@ -53,7 +53,9 @@ namespace krasnoludki.Algorithms
             foreach (var dwarf in dwarfs)
             {
                 // Znajdź ID minerałów, które lubi ten krasnoludek
-                var preferredMinerals = preferences.Where(p => p.DwarfId == dwarf.Id).Select(p => p.MineralId).ToList();
+                // TERAZ CZYTAMY PREFERENCJE BEZPOŚREDNIO ZE SŁOWNIKA KRASNOLUDKA
+                // Klucze w słowniku to nasze ID minerałów. Jeśli słownik jest null, dajemy pustą listę.
+                var preferredMinerals = dwarf.preferences?.Keys.ToList() ?? new List<int>();
 
                 foreach (var deposit in deposits)
                 {
@@ -153,7 +155,8 @@ namespace krasnoludki.Algorithms
                         {
                             var deposit = (Deposit)edge.To.OriginalEntity!;
                             dwarf.DepositId = deposit.Id;
-                            dwarf.AssignedDeposit = deposit;
+                            dwarf.Deposit = deposit;
+                            dwarf.DepositAssigned = true;
                             break;
                         }
                     }
