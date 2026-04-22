@@ -10,7 +10,7 @@ namespace krasnoludki.Entities
 
         // Właściwość nawigacyjna
         public Mineral? Mineral { get; set; } 
-
+        public Deposit(){}
         public Deposit(int id, int mineralId, int capacity, int x, int y)
         {
             Id = id;

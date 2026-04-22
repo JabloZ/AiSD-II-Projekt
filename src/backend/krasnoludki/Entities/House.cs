@@ -5,6 +5,7 @@ namespace krasnoludki.Entities
         public int Id { get; init; }
         public int X { get; init; }
         public int Y { get; init; }
+        public House(){}
 
         public House(int id, int x, int y)
         {
