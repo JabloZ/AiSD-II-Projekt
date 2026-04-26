@@ -31,3 +31,8 @@ services:
             - ./src/generate:/app
         command: tail -f /dev/null
 
+    frontend:
+        build: ./src/frontend
+        container_name: frontend
+        ports:
+            - "3000:3000"
