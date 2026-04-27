@@ -37,7 +37,7 @@ namespace krasnoludki.Repositories
                     dwarf.House = house;
                 }
             }
-
+            // 2. Pobieranie preferencji używając nowo podpiętego repozytorium
             var allPreferences = await PrefRepo.GetPreferences();
 
             foreach (var dwarf in dwarfs)
