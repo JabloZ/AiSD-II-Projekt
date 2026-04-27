@@ -20,6 +20,7 @@ namespace krasnoludki.Repositories
         DepositRepository DepositRepo = new DepositRepository();
         DwarfRepository DwarfRepo = new DwarfRepository();
         HouseRepository HouseRepo = new HouseRepository();
+        PreferenceRepository PrefRepo = new PreferenceRepository();
 
         public async Task<(List<Dwarf>, List<House>, List<Deposit>)> GetDataSetupFromDB()
         {
@@ -37,12 +38,7 @@ namespace krasnoludki.Repositories
                 }
             }
 
-            // 2. Pobieranie preferencji i pakowanie ich do słowników Krasnoludków
-            var cur = new DatabaseConn();
-            using var conn = await cur.DbConnect();
-            
-            const string Command = "SELECT dwarf_id as DwarfId, mineral_id as MineralId, multiplier as Multiplier FROM Preferences";
-            var allPreferences = await conn.QueryAsync<PreferenceDTO>(Command);
+            var allPreferences = await PrefRepo.GetPreferences();
 
             foreach (var dwarf in dwarfs)
             {
