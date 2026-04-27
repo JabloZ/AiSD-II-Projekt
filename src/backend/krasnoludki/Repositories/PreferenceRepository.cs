@@ -1,6 +1,9 @@
-using krasnoludki.db;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using Dapper;
 using krasnoludki.Entities;
+using krasnoludki.db;
 
 namespace krasnoludki.Repositories
 {
@@ -11,9 +14,10 @@ namespace krasnoludki.Repositories
             //niedokonczone
             var Cur = new DatabaseConn();
             using var Conn = await Cur.DbConnect();
-            const string Command = "SELECT * from Houses";
-            var Preferences = await Conn.QueryAsync<Preference>(Command);
-            return Preferences.ToList();
+            const string Command = "SELECT dwarf_id AS DwarfId, mineral_id AS MineralId, multiplier AS Multiplier FROM Preferences";
+            
+            var results = await Conn.QueryAsync<Preference>(Command);
+            return results.ToList();
         }
         
     }
