@@ -14,15 +14,10 @@ namespace Start
             Console.WriteLine("--- Start pobierania danych z bazy ---");
             MainRepository m = new MainRepository();
             
-            // 1. Wyciągnięcie prawdziwych danych z bazy PostgreSQL
             var (dwarfs, houses, deposits) = await m.GetDataSetupFromDB();
 
             Console.WriteLine($"Pobrano {dwarfs.Count} krasnoludków, {houses.Count} domów i {deposits.Count} kopalni.");
 
-            // 2. ZABEZPIECZENIE (Bardzo ważne przy Dapperze!)
-            // Dapper wyciąga wiersze z bazy, ale często nie łączy ich automatycznie. 
-            // Upewniamy się, że każdy krasnoludek ma podpięty obiekt House, bo algorytm
-            // potrzebuje tego do policzenia dystansu.
             foreach (var dwarf in dwarfs)
             {
                 if (dwarf.House == null)
@@ -33,11 +28,9 @@ namespace Start
 
             Console.WriteLine("\n--- Start silnika Min-Cost Max-Flow ---");
             
-            // 3. ODPALAMY TWÓJ ALGORYTM!
             var solver = new AssignmentSolver();
             solver.SolveAssignments(dwarfs, deposits);
 
-            // 4. Wyświetlamy wyniki po "wypluciu" ich przez sieć przepływową
             Console.WriteLine("\nWyniki przydziału (najkrótsza globalna ścieżka):");
             foreach (var dwarf in dwarfs)
             {
@@ -50,13 +43,11 @@ namespace Start
                 }
                 else
                 {
-                    // Krasnoludek może nie dostać pracy, jeśli nie ma miejsc w kopalniach z minerałem,
-                    // który lubi (wymóg z zadania).
                     Console.WriteLine($"- {dwarf.Name} został bez pracy!");
                 }
             }
 
-            return 0; // Aplikacja zamyka się elegancko
+            return 0;
         }
     }
 }
