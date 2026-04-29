@@ -6,3 +6,5 @@ obj
 .env
 dane.txt
 test
+node_modules
+.next
