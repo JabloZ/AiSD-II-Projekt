@@ -1,27 +1,27 @@
 --jak zmieniasz tu cos to walnij compose down i compose up, bo narazie nie obslugujemy migracji baz danych i to jest tylko do testowania
-CREATE TABLE House(
-    id INT PRIMARY KEY,
-    x INT,
-    y INT
+CREATE TABLE Houses(
+    Id INT PRIMARY KEY,
+    X INT,
+    Y INT
 );
 CREATE TABLE Minerals(
     id INT PRIMARY KEY,
     name VARCHAR(30)
 );
 CREATE TABLE Deposits(
-    id INT PRIMARY KEY,
-    mineral_id INT REFERENCES Minerals(id),
-    capacity INT,
-    x INT,
-    y INT
+    Id INT PRIMARY KEY,
+    MineralId INT REFERENCES Minerals(id),
+    Capacity INT,
+    X INT,
+    Y INT
 );
 CREATE TABLE Dwarfs(
-    id INT PRIMARY KEY,
-    name VARCHAR(50),
-    volume INT,
-    deposit_assigned BOOLEAN,
-    house_id INT REFERENCES House(id),
-    deposit_id INT NULL REFERENCES Deposits(id) 
+    Id INT PRIMARY KEY,
+    Name VARCHAR(50),
+    Loudness INT,
+    DepositAssigned BOOLEAN,
+    HouseId INT REFERENCES Houses(id),
+    DepositId INT NULL REFERENCES Deposits(id) 
 );
 
 CREATE TABLE Preferences(
@@ -40,8 +40,8 @@ CREATE TABLE Map(
 --    length INT
 --)
 
-INSERT INTO House VALUES (1, 40, 50);
-INSERT INTO House VALUES (2, 50, 50);
+INSERT INTO Houses VALUES (1, 40, 50);
+INSERT INTO Houses VALUES (2, 50, 50);
 
 INSERT INTO Minerals VALUES (1,'Złoto');
 INSERT INTO Minerals VALUES (2,'Srebro');
