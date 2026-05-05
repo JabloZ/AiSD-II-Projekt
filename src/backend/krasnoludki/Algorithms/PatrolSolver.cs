@@ -32,7 +32,7 @@ namespace krasnoludki.Algorithms
             int n = points.Count;
             if (n < 3) return points; // Mniej niż 3 punkty na mapie - otoczką są po prostu te punkty
 
-            // 2. Znajdź pivot najniżej na mapie, najbardziej wysunięty w lewo
+            // 2. Znajdujemy pivot najniżej na mapie, najbardziej wysunięty w lewo
             int lowestIndex = 0;
             for (int i = 1; i < n; i++)
             {
