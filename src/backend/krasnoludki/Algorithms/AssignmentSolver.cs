@@ -52,20 +52,19 @@ namespace krasnoludki.Algorithms
             // 3. Krawędzie: Krasnoludki -> Kopalnie (Pojemność 1, Koszt = Dystans)
             foreach (var dwarf in dwarfs)
             {
-                // Znajdujemy ID minerałów, które lubi ten krasnoludek
-                // Czytamy preferencje ze słownika krasnoludka
-                // Klucze w słowniku to nasze ID minerałów. Jeśli słownik jest null, dajemy pustą listę.
-                var preferredMinerals = dwarf.preferences?.Keys.ToList() ?? new List<int>();
-
                 foreach (var deposit in deposits)
                 {
-                    // Tworzymy krawędź jeśli minerał się zgadza
-                    if (preferredMinerals.Contains(deposit.MineralId))
+                    // Sprawdzamy:
+                    // Czy słownik w ogóle ma wpis o tym minerale
+                    // Czy mnożnik jest większy od zera
+                    if (dwarf.preferences != null && 
+                        dwarf.preferences.TryGetValue(deposit.MineralId, out float multiplier) && 
+                        multiplier > 0)
                     {
-                        // Upewniamy się, że obiekt House nie jest nullem (powinien być zaciągnięty z bazy)
                         if (dwarf.House != null)
                         {
                             double dist = DistanceRepository.CalculateDistance(dwarf.House, deposit);
+                            
                             AddEdge(dwarfNodes[dwarf.Id], depositNodes[deposit.Id], 1, dist);
                         }
                     }
