@@ -7,14 +7,6 @@ using Dapper;
 
 namespace krasnoludki.Repositories
 {
-    // Mała klasa pomocnicza, żeby Dapper miał do czego przypisać wiersze z bazy
-    public class PreferenceDTO
-    {
-        public int DwarfId { get; set; }
-        public int MineralId { get; set; }
-        public double Multiplier { get; set; } 
-    }
-
     public class MainRepository
     {
         DepositRepository DepositRepo = new DepositRepository();
