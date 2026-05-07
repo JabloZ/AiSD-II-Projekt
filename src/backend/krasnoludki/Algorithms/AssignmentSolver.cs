@@ -29,7 +29,7 @@ namespace krasnoludki.Algorithms
             var dwarfNodes = new Dictionary<int, GraphNode>();
             var depositNodes = new Dictionary<int, GraphNode>();
 
-            // 1. KRAWĘDZIE: Źródło -> Krasnoludki (Pojemność 1, Koszt 0)
+            // 1. Krawędzie: Źródło -> Krasnoludki (Pojemność 1, Koszt 0)
             foreach (var dwarf in dwarfs)
             {
                 var node = new GraphNode($"D_{dwarf.Id}", GraphNodeType.Dwarf, dwarf);
@@ -39,7 +39,7 @@ namespace krasnoludki.Algorithms
                 AddEdge(source, node, 1, 0);
             }
 
-            // 2. KRAWĘDZIE: Kopalnie -> Ujście (Pojemność = Capacity, Koszt 0)
+            // 2. Krawędzie: Kopalnie -> Ujście (Pojemność = Capacity, Koszt 0)
             foreach (var deposit in deposits)
             {
                 var node = new GraphNode($"Dep_{deposit.Id}", GraphNodeType.Deposit, deposit);
@@ -49,23 +49,22 @@ namespace krasnoludki.Algorithms
                 AddEdge(node, sink, deposit.Capacity, 0);
             }
 
-            // 3. KRAWĘDZIE: Krasnoludki -> Kopalnie (Pojemność 1, Koszt = Dystans)
+            // 3. Krawędzie: Krasnoludki -> Kopalnie (Pojemność 1, Koszt = Dystans)
             foreach (var dwarf in dwarfs)
             {
-                // Znajdź ID minerałów, które lubi ten krasnoludek
-                // TERAZ CZYTAMY PREFERENCJE BEZPOŚREDNIO ZE SŁOWNIKA KRASNOLUDKA
-                // Klucze w słowniku to nasze ID minerałów. Jeśli słownik jest null, dajemy pustą listę.
-                var preferredMinerals = dwarf.preferences?.Keys.ToList() ?? new List<int>();
-
                 foreach (var deposit in deposits)
                 {
-                    // TWORZYMY KRAWĘDŹ TYLKO JEŚLI MINERAL SIĘ ZGADZA (Zachowanie wartości dóbr!)
-                    if (preferredMinerals.Contains(deposit.MineralId))
+                    // Sprawdzamy:
+                    // Czy słownik w ogóle ma wpis o tym minerale
+                    // Czy mnożnik jest większy od zera
+                    if (dwarf.preferences != null && 
+                        dwarf.preferences.TryGetValue(deposit.MineralId, out float multiplier) && 
+                        multiplier > 0)
                     {
-                        // Upewnij się, że obiekt House nie jest nullem (powinien być zaciągnięty z bazy)
                         if (dwarf.House != null)
                         {
                             double dist = DistanceRepository.CalculateDistance(dwarf.House, deposit);
+                            
                             AddEdge(dwarfNodes[dwarf.Id], depositNodes[deposit.Id], 1, dist);
                         }
                     }
@@ -77,7 +76,7 @@ namespace krasnoludki.Algorithms
         {
             // Główna krawędź
             var edge = new GraphEdge(from, to, capacity, cost);
-            // Krawędź powrotna (rezydualna) - pojemność 0, koszt ujemny (cofa dystans!)
+            // Krawędź powrotna (rezydualna) - pojemność 0, koszt ujemny (cofa dystans)
             var residual = new GraphEdge(to, from, 0, -cost); 
 
             edge.Residual = residual;
@@ -89,7 +88,7 @@ namespace krasnoludki.Algorithms
 
         private void CalculateMinCostMaxFlow()
         {
-            // Algorytm Successive Shortest Path (używa Bellmana-Forda do znalezienia najtańszej ścieżki)
+            // Algorytm z użyciem Bellmana-Forda do znalezienia najtańszej ścieżki
             while (true)
             {
                 var dist = new Dictionary<GraphNode, double>();
@@ -98,7 +97,7 @@ namespace krasnoludki.Algorithms
                 foreach(var node in nodes) dist[node] = double.MaxValue;
                 dist[source] = 0;
 
-                // Relaksacja krawędzi (Bellman-Ford)
+                // Bellman-Ford
                 bool changed = true;
                 for (int i = 0; i < nodes.Count - 1 && changed; i++)
                 {
@@ -119,11 +118,11 @@ namespace krasnoludki.Algorithms
                     }
                 }
 
-                // Jeśli nie znaleźliśmy drogi do Ujścia, znaczy to, że wykorzystaliśmy cały możliwy przepływ
+                // Jeśli nie znaleźliśmy drogi do ujścia, znaczy to, że wykorzystaliśmy cały możliwy przepływ
                 if (dist[sink] == double.MaxValue)
                     break;
 
-                // Szukamy "wąskiego gardła" na znalezionej ścieżce (tutaj zawsze będzie 1, ale to dobra praktyka)
+                // Szukamy "wąskiego gardła" na znalezionej ścieżce
                 int pushFlow = int.MaxValue;
                 var curr = sink;
                 while (curr != source)
@@ -143,7 +142,7 @@ namespace krasnoludki.Algorithms
                     curr = edge.From;
                 }
 
-                // Wyciągamy wnioski z grafu
+                // Analiza grafu
                 foreach (var node in nodes.Where(n => n.Type == GraphNodeType.Dwarf))
                 {
                     var dwarf = (Dwarf)node.OriginalEntity!;
@@ -162,8 +161,6 @@ namespace krasnoludki.Algorithms
                     }
                 }
             }
-        }
-
-        
+        }       
     }
 }
