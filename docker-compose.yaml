@@ -9,6 +9,7 @@ services:
             - ./src/backend:/app
             - /app/krasnoludki/bin
             - /app/krasnoludki/obj
+            - ./src/backend/krasnoludki/Repositories/test_data:/app/test_data
         environment:
             - CONNECTION_STRING=Host=${DB_HOST};Port=${DB_PORT};Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
         command: sh -c "dotnet run --project krasnoludki"
