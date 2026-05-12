@@ -5,12 +5,18 @@ using krasnoludki.db;
 using krasnoludki.Repositories;
 using krasnoludki.Algorithms;
 
-namespace Start 
+namespace krasnoludki
 {
+    public static class Globals
+    {
+        public static int save_id=1;
+    }
     class Start 
     {
+        
         public static async Task<int> Main(string[] args) 
         {
+            
             // Pobieranie i przygotowanie danych
             Console.WriteLine("--- Start pobierania danych z bazy ---");
             MainRepository m = new MainRepository();
