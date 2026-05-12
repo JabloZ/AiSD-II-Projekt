@@ -20,7 +20,6 @@ namespace krasnoludki.Repositories
             List<Deposit> deposits = await DepositRepo.GetDeposits();
             List<House> houses = await HouseRepo.GetHouses();
 
-            // 1. Zabezpieczenie domków
             var houseDict = houses.ToDictionary(h => h.Id);
             foreach (var dwarf in dwarfs)
             {
@@ -29,15 +28,10 @@ namespace krasnoludki.Repositories
                     dwarf.House = house;
                 }
             }
-            // 2. Pobieranie preferencji używając nowo podpiętego repozytorium
             var allPreferences = await PrefRepo.GetPreferences();
-
             foreach (var dwarf in dwarfs)
             {
-                // Wyłuskujemy z całej listy tylko te preferencje, które należą do aktualnego krasnoludka
                 var dwarfPrefs = allPreferences.Where(p => p.DwarfId == dwarf.Id);
-                
-                // Tworzymy mu słownik (rzutujemy double na float, bo tak mamy ustawione w encji Dwarf)
                 dwarf.preferences = dwarfPrefs.ToDictionary(
                     p => p.MineralId, 
                     p => (float)p.Multiplier

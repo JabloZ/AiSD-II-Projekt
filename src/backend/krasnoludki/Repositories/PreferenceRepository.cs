@@ -1,24 +1,36 @@
+using System;
 using System.Collections.Generic;
-using System.Linq;
+using System.IO;
+using System.Globalization;
 using System.Threading.Tasks;
-using Dapper;
 using krasnoludki.Entities;
-using krasnoludki.db;
 
 namespace krasnoludki.Repositories
 {
     public class PreferenceRepository
     {
+        private const string PreferencesFilePath = "test_data/preferences.csv";
+
         public async Task<List<Preference>> GetPreferences()
         {
-            //niedokonczone
-            var Cur = new DatabaseConn();
-            using var Conn = await Cur.DbConnect();
-            const string Command = "SELECT dwarf_id AS DwarfId, mineral_id AS MineralId, multiplier AS Multiplier FROM Preferences";
-            
-            var results = await Conn.QueryAsync<Preference>(Command);
-            return results.ToList();
+            string[] lines = await File.ReadAllLinesAsync(PreferencesFilePath);
+            List<Preference> preferences = new List<Preference>();
+
+            for (int i = 1; i < lines.Length; i++)
+            {
+                string[] columns = lines[i].Split(',');
+
+                Preference p = new Preference
+                {
+                    DwarfId = int.Parse(columns[0]),
+                    MineralId = int.Parse(columns[1]),
+                    Multiplier = double.Parse(columns[2], CultureInfo.InvariantCulture)
+                };
+
+                preferences.Add(p);
+            }
+
+            return preferences;
         }
-        
     }
 }
