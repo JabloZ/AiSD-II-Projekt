@@ -93,6 +93,30 @@ namespace Start
                 }
             }
 
+            // Kopresja danych (algorytm Huffmana)
+            Console.WriteLine("\n--- Start Kompresji Raportów (Algorytm Huffmana) ---");
+
+            // Dowódca tworzy długi, powtarzalny raport o przechwyconych jabłkach
+            string raportZeSzmuglu = "reneta, antonowka, reneta, ligol, papierowka, reneta, reneta, ligol, antonowka, reneta";
+            Console.WriteLine($"Oryginalny raport: {raportZeSzmuglu}");
+
+            var huffman = new HuffmanSolver();
+            
+            // 1. Budujemy drzewo dla tego konkretnego raportu
+            huffman.BuildTree(raportZeSzmuglu);
+
+            // 2. Kodujemy wiadomość (kompresja)
+            string skompresowanyRaport = huffman.Encode(raportZeSzmuglu);
+            Console.WriteLine($"Skompresowana wiadomość (kod binarny): \n{skompresowanyRaport}");
+
+            // 3. Dekodujemy wiadomość (dekompresja)
+            string odkodowanyRaport = huffman.Decode(skompresowanyRaport);
+            
+            Console.WriteLine($"\nCzy odkodowany raport zgadza się z oryginałem? : {raportZeSzmuglu == odkodowanyRaport}");
+            
+            // Wyświetlamy statystyki zysku pamięciowego
+            huffman.PrintStatistics(raportZeSzmuglu, skompresowanyRaport);
+
             return 0;
         }
     }
