@@ -11,6 +11,7 @@ namespace Start
     {
         public static async Task<int> Main(string[] args) 
         {
+            // Pobieranie i przygotowanie danych
             Console.WriteLine("--- Start pobierania danych z bazy ---");
             MainRepository m = new MainRepository();
             
@@ -26,6 +27,7 @@ namespace Start
                 }
             }
 
+            // Przydział do kopalni (Min-Cost Max-Flow)
             Console.WriteLine("\n--- Start silnika Min-Cost Max-Flow ---");
             
             var solver = new AssignmentSolver();
@@ -44,6 +46,25 @@ namespace Start
                 else
                 {
                     Console.WriteLine($"- {dwarf.Name} został bez pracy!");
+                }
+            }
+
+            // Trasa patrolu (algorytm grahama)
+            Console.WriteLine("\n--- Start algorytmu Grahama (Wyznaczanie trasy patrolu) ---");
+            
+            var patrolSolver = new PatrolSolver();
+            var patrolRoute = patrolSolver.FindPatrolRoute(houses, deposits);
+
+            Console.WriteLine("\nPunkty kontrolne na trasie patrolu (Otoczka wypukła):");
+            if (patrolRoute.Count < 3)
+            {
+                Console.WriteLine("Za mało punktów na mapie, aby stworzyć sensowny obwód!");
+            }
+            else
+            {
+                foreach (var point in patrolRoute)
+                {
+                    Console.WriteLine($" -> {point.Name} [X: {point.X}, Y: {point.Y}]");
                 }
             }
 
