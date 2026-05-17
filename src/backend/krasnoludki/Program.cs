@@ -74,6 +74,55 @@ namespace krasnoludki
                 }
             }
 
+            // Obrona granic (drzewo przedziałowe)
+            Console.WriteLine("\n--- Start Obrony Granic (Drzewo Przedziałowe) ---");
+            
+            // Do testów ustawiamy na murze wszystkie nasze krasnoludki z bazy w jeden szereg
+            var defenseSolver = new BorderDefenseSolver(dwarfs);
+
+            // Zakładamy testowe próby szmuglu na konkretne indeksy
+            var smugglingAttempts = new[]
+            {
+                new { Start = 0, End = 1, Opis = "lewe skrzydło muru" },
+                new { Start = 1, End = 2, Opis = "prawe skrzydło muru" },
+                new { Start = 0, End = 2, Opis = "całą szerokość muru" }
+            };
+
+            foreach (var attempt in smugglingAttempts)
+            {
+                var commander = defenseSolver.GetCommanderForSegment(attempt.Start, attempt.End);
+                if (commander != null)
+                {
+                    Console.WriteLine($"\n[SZMUGIEL JABŁEK] Krnąbrne krasnoludki przerzucają renety i papierówki przez {attempt.Opis} (krasnoludy {attempt.Start}-{attempt.End})!");
+                    Console.WriteLine($"Dowództwo przejmuje najgłośniejszy dekametrowiec: {commander.Name} (Głośność: {commander.Loudness})");
+                    Console.WriteLine($"{commander.Name} ryczy: \"Strzały na cięciwy – naciągnąć cięciwy – strzał!\"");
+                }
+            }
+
+            // Kopresja danych (algorytm Huffmana)
+            Console.WriteLine("\n--- Start Kompresji Raportów (Algorytm Huffmana) ---");
+
+            // Dowódca tworzy długi, powtarzalny raport o przechwyconych jabłkach
+            string raportZeSzmuglu = "reneta, antonowka, reneta, ligol, papierowka, reneta, reneta, ligol, antonowka, reneta";
+            Console.WriteLine($"Oryginalny raport: {raportZeSzmuglu}");
+
+            var huffman = new HuffmanSolver();
+            
+            // 1. Budujemy drzewo dla tego konkretnego raportu
+            huffman.BuildTree(raportZeSzmuglu);
+
+            // 2. Kodujemy wiadomość (kompresja)
+            string skompresowanyRaport = huffman.Encode(raportZeSzmuglu);
+            Console.WriteLine($"Skompresowana wiadomość (kod binarny): \n{skompresowanyRaport}");
+
+            // 3. Dekodujemy wiadomość (dekompresja)
+            string odkodowanyRaport = huffman.Decode(skompresowanyRaport);
+            
+            Console.WriteLine($"\nCzy odkodowany raport zgadza się z oryginałem? : {raportZeSzmuglu == odkodowanyRaport}");
+            
+            // Wyświetlamy statystyki zysku pamięciowego
+            huffman.PrintStatistics(raportZeSzmuglu, skompresowanyRaport);
+
             return 0;
         }
     }
