@@ -32,6 +32,15 @@ namespace krasnoludki.Algorithms
             // Tworzymy początkową listę węzłów
             var nodes = frequencies.Select(kvp => new HuffmanNode { Symbol = kvp.Key, Frequency = kvp.Value }).ToList();
 
+<<<<<<< HEAD
+=======
+            // Zabezpieczenie dla 1 unikalnego znaku
+            if (nodes.Count == 1)
+            {
+                nodes.Add(new HuffmanNode { Symbol = '\0', Frequency = 0 }); // Dodajemy sztuczny węzeł
+            }
+
+>>>>>>> aef03d5e48f842dcd8010b6ded4e3af4e6eeae7f
             // Budujemy drzewo łącząc węzły o najmniejszej częstotliwości
             while (nodes.Count > 1)
             {
