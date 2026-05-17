@@ -1,122 +1,65 @@
-using System;
-using System.Collections.Generic;
-using System.IO;
-using System.Threading.Tasks;
 using krasnoludki.Entities;
-using Dapper;
 using krasnoludki.db;
-
+using Npgsql;
+using Dapper;
 namespace krasnoludki.Repositories
 {
     public class DepositRepository
     {
-        private string _depositsFilePath;
-
-        public DepositRepository()
+        // Przekazujemy z bazy ilość aktualnie przypisanych krasnoludków do tej kopalni
+        public bool CanAssign(Deposit Deposit, int CurrentAssignedDwarfsCount)
         {
-            SetFilePathFromDb().GetAwaiter().GetResult();
+            return CurrentAssignedDwarfsCount < Deposit.Capacity;
         }
+        //get capacity
 
-        public async Task SetFilePathFromDb()
+        public async Task<int> GetMineral(Deposit Deposit)
         {
+            //Tutaj propozycja czegos pomiedzy pisaniem tych using async await jak u gory a EF core ktore zjadloby caly projekt - czyli Dapper
             var Cur = new DatabaseConn();
             using var Conn = await Cur.DbConnect();
 
             var DynamicParameters = new DynamicParameters();
-            DynamicParameters.Add("p", Globals.save_id);
+            DynamicParameters.Add("p", Deposit.Id);
 
-            const string Command = "SELECT path FROM Deposits WHERE id = @p";
-            string result = await Conn.QueryFirstOrDefaultAsync<string>(Command, DynamicParameters);
-            
-            _depositsFilePath = result ?? "test_data/deposits.csv";
-        }
-
-        public async Task<string> GetPath(int save_id)
-        {
-            var Cur = new DatabaseConn();
-            using var Conn = await Cur.DbConnect();
-
-            var DynamicParameters = new DynamicParameters();
-            DynamicParameters.Add("p", save_id);
-
-            const string Command = "SELECT path FROM Deposits WHERE id = @p";
-            string Result = await Conn.QueryFirstOrDefaultAsync<string>(Command, DynamicParameters);
+            const string Command = "SELECT mineral_id FROM Deposits WHERE id = @p";
+            int Result = await Conn.QueryFirstOrDefaultAsync<int>(Command, DynamicParameters);
             return Result;
         }
-
-        public bool CanAssign(Deposit deposit, int currentCount)
+        public async Task<int> GetCapacity(Deposit Deposit)
         {
-            return currentCount < deposit.Capacity;
+            var Cur = new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
+            var DynamicParameters = new DynamicParameters();
+            DynamicParameters.Add("p", Deposit.Id);
+            const string Command = "SELECT capacity FROM Deposits WHERE id = @p";
+            int Result = await Conn.QueryFirstOrDefaultAsync<int>(Command, DynamicParameters);
+            return Result;
         }
-
-        public async Task<int> GetMineral(Deposit deposit)
+        public async Task<(int,int)> GetPosition(Deposit Deposit)
         {
-            string[] lines = await File.ReadAllLinesAsync(_depositsFilePath);
+            
+            var Cur = new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
 
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string[] columns = lines[i].Split(',');
-                if (int.Parse(columns[0]) == deposit.Id)
-                {
-                    return int.Parse(columns[1]); // mineral_id
-                }
-            }
-            return 0;
+            var DynamicParameters = new DynamicParameters();
+            DynamicParameters.Add("p", Deposit.Id);
+            
+            const string Command = "SELECT x,y FROM Deposits WHERE id = @p";
+            var Result = await Conn.QuerySingleAsync(Command, DynamicParameters);
+            int PosX = (int)Result.x;
+            int PosY = (int)Result.y;
+            return (PosX, PosY);
         }
-
-        public async Task<int> GetCapacity(Deposit deposit)
-        {
-            string[] lines = await File.ReadAllLinesAsync(_depositsFilePath);
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string[] columns = lines[i].Split(',');
-                if (int.Parse(columns[0]) == deposit.Id)
-                {
-                    return int.Parse(columns[2]); // capacity
-                }
-            }
-            return 0;
-        }
-
-        public async Task<(int, int)> GetPosition(Deposit deposit)
-        {
-            string[] lines = await File.ReadAllLinesAsync(_depositsFilePath);
-
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string[] columns = lines[i].Split(',');
-                if (int.Parse(columns[0]) == deposit.Id)
-                {
-                    int x = int.Parse(columns[3]);
-                    int y = int.Parse(columns[4]);
-                    return (x, y);
-                }
-            }
-            return (0, 0);
-        }
-
         public async Task<List<Deposit>> GetDeposits()
         {
-            string[] lines = await File.ReadAllLinesAsync(_depositsFilePath);
-            List<Deposit> deposits = new List<Deposit>();
-
-            for (int i = 1; i < lines.Length; i++)
-            {
-                string[] columns = lines[i].Split(',');
-                
-                Deposit d = new Deposit
-                {
-                    Id = int.Parse(columns[0]),
-                    MineralId = int.Parse(columns[1]),
-                    Capacity = int.Parse(columns[2]),
-                    X = int.Parse(columns[3]),
-                    Y = int.Parse(columns[4])
-                };
-                
-                deposits.Add(d);
-            }
-
-            return deposits;
+            var Cur=new DatabaseConn();
+            using var Conn = await Cur.DbConnect();
+            const string Command= "SELECT * from Deposits";
+            var Deposits = await Conn.QueryAsync<Deposit>(Command);
+        
+            return Deposits.ToList();
         }
+
     }
 }
