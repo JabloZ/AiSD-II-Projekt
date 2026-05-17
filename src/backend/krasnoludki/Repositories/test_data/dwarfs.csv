@@ -1,4 +1,0 @@
-Id,Name,Loudness,DepositAssigned,houseId,depositId
-1,Gimli,85,True,1,101
-2,Balin,60,True,1,102
-3,Dwalin,90,False,2,101

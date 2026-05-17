@@ -8,6 +8,7 @@ namespace krasnoludki.Tests
 {
     public class AlgorithmTest1
     {
+        
         [Fact]
         public void SolveAssignments_WhenValidDwarfAndValidDeposit_AssignDwarfToDeposit() 
         {
