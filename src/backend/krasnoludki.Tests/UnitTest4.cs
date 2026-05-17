@@ -58,9 +58,9 @@ namespace krasnoludki.Tests
             Assert.Null(exception);
         }
 
-        [Fact]
+       // [Fact]
         //chwilowo nie dziala
-        
+
         /*public void EncodeAndDecode_WhenSingleRepeatedCharacter_HandlesCorrectly()
         {
             var solver = new HuffmanSolver();
