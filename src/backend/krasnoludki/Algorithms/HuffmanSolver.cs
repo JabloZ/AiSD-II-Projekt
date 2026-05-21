@@ -38,6 +38,7 @@ namespace krasnoludki.Algorithms
                 nodes.Add(new HuffmanNode { Symbol = '\0', Frequency = 0 }); // Dodajemy sztuczny węzeł
             }
 
+
             // Budujemy drzewo łącząc węzły o najmniejszej częstotliwości
             while (nodes.Count > 1)
             {

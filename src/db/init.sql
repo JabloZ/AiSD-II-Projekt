@@ -1,38 +1,29 @@
 --jak zmieniasz tu cos to walnij compose down i compose up, bo narazie nie obslugujemy migracji baz danych i to jest tylko do testowania
 CREATE TABLE Houses(
     Id INT PRIMARY KEY,
-    X INT,
-    Y INT
+    Path VARCHAR(255)
 );
 CREATE TABLE Minerals(
-    id INT PRIMARY KEY,
-    name VARCHAR(30)
+    Id INT PRIMARY KEY,
+    Path VARCHAR(255)
 );
 CREATE TABLE Deposits(
     Id INT PRIMARY KEY,
-    MineralId INT REFERENCES Minerals(id),
-    Capacity INT,
-    X INT,
-    Y INT
+    Path VARCHAR(255)
 );
 CREATE TABLE Dwarfs(
     Id INT PRIMARY KEY,
-    Name VARCHAR(50),
-    Loudness INT,
-    DepositAssigned BOOLEAN,
-    HouseId INT REFERENCES Houses(id),
-    DepositId INT NULL REFERENCES Deposits(id) 
+    Path VARCHAR(255)
 );
 
 CREATE TABLE Preferences(
-    dwarf_id INT REFERENCES Dwarfs(id),
-    mineral_id INT REFERENCES Minerals(id),
-    multiplier FLOAT
+    Id INT PRIMARY KEY,
+    Path VARCHAR(255)
 );
 
 CREATE TABLE Map(
-    size_x INT,
-    size_y INT
+    Id INT PRIMARY KEY,
+    Path VARCHAR(255)
 );
 --CREATE TABLE Distances(
 --    FOREIGN KEY house_id REFERENCES House(id),
@@ -57,5 +48,3 @@ INSERT INTO Preferences VALUES (1, 1, 0.3);
 INSERT INTO Preferences VALUES (1, 2, 1);
 INSERT INTO Preferences VALUES (2, 1, 1);
 INSERT INTO Preferences VALUES (2, 2, 0.5);
-
-
