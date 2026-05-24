@@ -1,9 +1,0 @@
-node_modules
-.next
-.git
-.env*
-*.sln
-bin
-obj
-Dockerfile
-docker-compose.yaml
