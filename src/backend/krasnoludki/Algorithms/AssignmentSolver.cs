@@ -24,19 +24,7 @@ namespace krasnoludki.Algorithms
         public void SolveAssignments(List<Dwarf> dwarfs, List<Deposit> deposits, string algorithm = "mcmf")
         {
             Logs.Clear();
-
-            switch (algorithm.ToLower())
-            {
-                case "greedy":
-                    SolveGreedy(dwarfs, deposits);
-                    break;
-                case "random":
-                    SolveRandom(dwarfs, deposits);
-                    break;
-                default: // "mcmf" / "hungarian"
-                    SolveMCMF(dwarfs, deposits);
-                    break;
-            }
+            SolveMCMF(dwarfs, deposits);
 
             // ── Summary ──────────────────────────────────────────────────────
             int assigned   = dwarfs.Count(d => d.DepositAssigned);
@@ -208,98 +196,5 @@ namespace krasnoludki.Algorithms
             }
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  ALGORYTM 2 — Zachłanny (heurystyczny)
-        //
-        //  1. Policz dystans dla każdej dopuszczalnej pary (krasnoludek, kopalnia)
-        //  2. Posortuj pary rosnąco po dystansie
-        //  3. Przydzielaj od najtańszej pary, o ile oboje wolni i kopalnia ma miejsce
-        //  Złożoność: O(n·m·log(n·m)) gdzie n=krasnoludki, m=kopalnie
-        // ═══════════════════════════════════════════════════════════════════
-        private void SolveGreedy(List<Dwarf> dwarfs, List<Deposit> deposits)
-        {
-            Log("Algorytm: Zachłanny (sortowanie par po dystansie)");
-            Log($"Krasnoludków: {dwarfs.Count}  |  Kopalni: {deposits.Count}");
-            Log("──────────────────────────────────────────");
-
-            // Build all valid (dwarf, deposit, dist) triples
-            var pairs = new List<(Dwarf dwarf, Deposit deposit, double dist)>();
-            foreach (var dwarf in dwarfs)
-            {
-                if (dwarf.House == null) continue;
-                var prefs = dwarf.preferences?.Keys.ToHashSet() ?? new HashSet<int>();
-                foreach (var deposit in deposits)
-                {
-                    if (!prefs.Contains(deposit.MineralId)) continue;
-                    double dist = DistanceRepository.CalculateDistance(dwarf.House, deposit);
-                    pairs.Add((dwarf, deposit, dist));
-                }
-            }
-
-            pairs.Sort((a, b) => a.dist.CompareTo(b.dist));
-
-            var assignedDwarfs    = new HashSet<int>();
-            var depositRemainder  = deposits.ToDictionary(d => d.Id, d => d.Capacity);
-
-            foreach (var (dwarf, deposit, dist) in pairs)
-            {
-                if (assignedDwarfs.Contains(dwarf.Id))          continue;
-                if (depositRemainder[deposit.Id] <= 0)           continue;
-
-                dwarf.DepositId       = deposit.Id;
-                dwarf.Deposit         = deposit;
-                dwarf.DepositAssigned = true;
-                assignedDwarfs.Add(dwarf.Id);
-                depositRemainder[deposit.Id]--;
-
-                Log($"Przypisano {dwarf.Name} (id:{dwarf.Id}) → Kopalnia #{deposit.Id} [dystans: {dist:F1}]");
-            }
-
-            foreach (var dwarf in dwarfs.Where(d => !d.DepositAssigned))
-                Log($"Brak przydziału: {dwarf.Name} (id:{dwarf.Id}) — brak zgodnych kopalni");
-        }
-
-        // ═══════════════════════════════════════════════════════════════════
-        //  ALGORYTM 3 — Losowy (baseline)
-        //
-        //  Dla każdego krasnoludka wybiera losową zgodną kopalnię
-        //  z pozostałą pojemnością. Nie optymalizuje dystansu.
-        //  Złożoność: O(n·m)
-        // ═══════════════════════════════════════════════════════════════════
-        private void SolveRandom(List<Dwarf> dwarfs, List<Deposit> deposits)
-        {
-            Log("Algorytm: Losowy (baseline, bez optymalizacji)");
-            Log($"Krasnoludków: {dwarfs.Count}  |  Kopalni: {deposits.Count}");
-            Log("──────────────────────────────────────────");
-
-            var rng              = new Random();
-            var depositRemainder = deposits.ToDictionary(d => d.Id, d => d.Capacity);
-            var shuffled         = dwarfs.OrderBy(_ => rng.Next()).ToList();
-
-            foreach (var dwarf in shuffled)
-            {
-                if (dwarf.House == null) continue;
-                var prefs = dwarf.preferences?.Keys.ToHashSet() ?? new HashSet<int>();
-
-                var candidates = deposits
-                    .Where(d => prefs.Contains(d.MineralId) && depositRemainder[d.Id] > 0)
-                    .ToList();
-
-                if (candidates.Count == 0)
-                {
-                    Log($"Brak przydziału: {dwarf.Name} (id:{dwarf.Id}) — brak zgodnych kopalni");
-                    continue;
-                }
-
-                var deposit = candidates[rng.Next(candidates.Count)];
-                dwarf.DepositId       = deposit.Id;
-                dwarf.Deposit         = deposit;
-                dwarf.DepositAssigned = true;
-                depositRemainder[deposit.Id]--;
-
-                double dist = DistanceRepository.CalculateDistance(dwarf.House, deposit);
-                Log($"Przypisano {dwarf.Name} (id:{dwarf.Id}) → Kopalnia #{deposit.Id} [dystans: {dist:F1}]");
-            }
-        }
     }
 }

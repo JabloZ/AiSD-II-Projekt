@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using krasnoludki.db;
 using krasnoludki.Entities;
 using Dapper;
-
+using System.Text.Json;
 namespace krasnoludki.Repositories
 {
     // Mała klasa pomocnicza, żeby Dapper miał do czego przypisać wiersze z bazy
@@ -53,6 +53,24 @@ namespace krasnoludki.Repositories
             }
             
             return (dwarfs, houses, deposits);
+        }
+        public async Task<string> GetDataSetupAsJson()
+        {
+
+            var (dwarfs, houses, deposits) = await GetDataSetupFromDB();
+            var dataEnvelope = new
+            {
+                Dwarfs = dwarfs,
+                Houses = houses,
+                Deposits = deposits
+            };
+
+            var options = new JsonSerializerOptions
+            {
+                WriteIndented = true,
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase
+            };
+            return JsonSerializer.Serialize(dataEnvelope, options);
         }
     }
 }

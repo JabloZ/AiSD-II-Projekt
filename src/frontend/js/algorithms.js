@@ -15,30 +15,4 @@ export const ALGORITHMS = [
             'W przeciwnym razie: zmodyfikuj macierz (odejmij minimum z niepokrytych, dodaj do podwójnie pokrytych) i wróć do kroku 4',
         ],
     },
-    {
-        id: 'greedy',
-        name: 'Algorytm Zachłanny',
-        shortName: 'Zachłanny',
-        complexity: 'O(n² log n)',
-        spaceComplexity: 'O(n)',
-        description: 'Heurystyczny algorytm zachłanny. Szybki, ale nie gwarantuje optymalnego rozwiązania – w każdym kroku wybiera lokalnie najtańszy wolny przydział.',
-        steps: [
-            'Wylicz koszt (dystans) dla każdej możliwej pary (krasnoludek, kopalnia)',
-            'Posortuj wszystkie pary rosnąco według kosztu',
-            'Dla każdej pary od najtańszej: jeśli krasnoludek i kopalnia są wolni – przydziel',
-            'Powtarzaj dopóki wszyscy krasnoludkowie są przydzieleni lub lista jest wyczerpana',
-        ],
-    },
-    {
-        id: 'random',
-        name: 'Algorytm Losowy',
-        shortName: 'Losowy',
-        complexity: 'O(n)',
-        spaceComplexity: 'O(n)',
-        description: 'Losowy przydział krasnoludków do dostępnych kopalni. Nie optymalizuje kosztu – służy jako baseline do porównania z innymi algorytmami.',
-        steps: [
-            'Przetasuj listę kopalni w losowej kolejności (Fisher-Yates)',
-            'Przydziel każdemu krasnoludkowi kolejną kopalnię z przetasowanej listy',
-        ],
-    },
 ];

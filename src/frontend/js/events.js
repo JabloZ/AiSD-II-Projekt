@@ -4,7 +4,7 @@ import { generateRandomPolygon, randomPointInPolygon } from './geometry.js';
 import { getSvgPoint } from './svg.js';
 import { render } from './render.js';
 
-// ── Sidebar buttons ────────────────────────────────────────────────────────────
+// Sidebar buttons
 
 document.getElementById('btn-randomize').addEventListener('click', () => {
     state.border   = generateRandomPolygon();
@@ -82,7 +82,7 @@ document.getElementById('mine-cap-inc').addEventListener('click', () => {
     if (m) { m.capacity++; render(); }
 });
 
-// ── Mineral select ─────────────────────────────────────────────────────────────
+// Mineral select
 
 const mineralSelect = document.getElementById('mine-mineral-select');
 if (mineralSelect) {
@@ -97,7 +97,7 @@ if (mineralSelect) {
     });
 }
 
-// ── SVG canvas mouse events ────────────────────────────────────────────────────
+// SVG canvas mouse events
 
 const svg = document.getElementById('map');
 if (!svg) throw new Error('SVG #map not found — events.js must be imported after the DOM includes #view-editor');

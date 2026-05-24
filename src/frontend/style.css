@@ -963,6 +963,17 @@ body {
 
 .btn-outline-sm:hover { color: var(--gold-dim); border-color: var(--gold-soft); }
 
+.btn-danger-sm {
+    background: rgba(127,29,29,0.3);
+    color: #fca5a5;
+    border-color: #b91c1c;
+}
+
+.btn-danger-sm:hover {
+    background: rgba(185,28,28,0.5);
+    box-shadow: 0 2px 8px rgba(185,28,28,0.3);
+}
+
 .btn-back {
     padding: 7px 14px;
     background: rgba(20,12,3,0.5);

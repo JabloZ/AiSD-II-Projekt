@@ -1,6 +1,4 @@
-// ═══════════════════════════════════════════════════════════════
 // STAŁE
-// ═══════════════════════════════════════════════════════════════
 
 const W  = 900;
 const H  = 650;
@@ -31,9 +29,7 @@ function newDwarf() {
     };
 }
 
-// ═══════════════════════════════════════════════════════════════
 // STAN EDYTORA
-// ═══════════════════════════════════════════════════════════════
 
 const state = {
     border:       [],
@@ -46,9 +42,7 @@ const state = {
     assignments:  [],
 };
 
-// ═══════════════════════════════════════════════════════════════
 // GEOMETRIA
-// ═══════════════════════════════════════════════════════════════
 
 function generateRandomPolygon(numVertices = 10) {
     const cx = W / 2, cy = H / 2;
@@ -118,9 +112,7 @@ function borderAroundPoints(points, pad = 90) {
     }));
 }
 
-// ═══════════════════════════════════════════════════════════════
 // POMOCNIKI SVG
-// ═══════════════════════════════════════════════════════════════
 
 function svgEl(tag, attrs) {
     const el = document.createElementNS(NS, tag);
@@ -142,9 +134,7 @@ function getSvgPoint(event) {
     };
 }
 
-// ═══════════════════════════════════════════════════════════════
 // RENDEROWANIE
-// ═══════════════════════════════════════════════════════════════
 
 function renderBorder() {
     clearLayer('layer-territory');
@@ -224,20 +214,17 @@ function renderVertices() {
 }
 
 function makeHouseIcon(h) {
-    const isSel = state.selected === h.id;
-    const g = svgEl('g', { transform: `translate(${h.x},${h.y})`, style: 'cursor:grab', filter: 'url(#shadow)' });
+    const isSel  = state.selected === h.id;
+    const count  = (h.dwarfs || []).length;
+    const selStyle = isSel ? ';--roof:#7f1d1d;--wall:#c2a45a' : '';
+    const g = svgEl('g', { transform: `translate(${h.x},${h.y})`, style: `cursor:grab${selStyle}`, filter: 'url(#shadow)' });
 
-    g.appendChild(svgEl('rect',    { x: -13, y: -8,  width: 26, height: 16, fill: isSel ? '#c2a45a' : '#8b6914', stroke: '#4a3000', 'stroke-width': 1.5, rx: 1 }));
-    g.appendChild(svgEl('polygon', { points: '0,-22 -15,-8 15,-8', fill: isSel ? '#7f1d1d' : '#5c1a0a', stroke: '#3b0a00', 'stroke-width': 1.5 }));
-    g.appendChild(svgEl('rect',    { x: -4,  y: -1,  width: 8,  height: 9,  fill: '#2c1a00', rx: 1 }));
-    g.appendChild(svgEl('rect',    { x:  5,  y: -5,  width: 5,  height: 5,  fill: '#fde68a', opacity: 0.8, rx: 0.5 }));
-    g.appendChild(svgEl('rect',    { x: -28, y:  25, width: 56, height: 13, rx: 3, fill: 'rgba(30,15,0,0.72)' }));
-
-    const label = svgEl('text', { y: 35, 'text-anchor': 'middle', 'font-size': 10, fill: '#fde68a', 'font-family': 'serif', 'font-weight': 'bold', style: 'user-select:none;pointer-events:none' });
-    label.textContent = `${(h.dwarfs || []).length} krasnol.`;
-    g.appendChild(label);
-
-    if (isSel) g.appendChild(svgEl('circle', { r: 20, fill: 'none', stroke: '#f59e0b', 'stroke-width': 1.5, 'stroke-dasharray': '3 2', opacity: 0.8 }));
+    g.innerHTML = `
+        ${isSel ? '<circle r="20" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.8"/>' : ''}
+        <use href="#sym-house"/>
+        <rect x="-28" y="25" width="56" height="13" rx="3" fill="rgba(30,15,0,0.72)"/>
+        <text y="35" text-anchor="middle" font-size="10" fill="#fde68a" font-family="serif" font-weight="bold" style="user-select:none;pointer-events:none">${count} krasnol.</text>
+    `;
 
     g.addEventListener('click', e => { e.stopPropagation(); state.selected = h.id; render(); });
     g.addEventListener('mousedown', e => {
@@ -254,20 +241,14 @@ function makeHouseIcon(h) {
 function makeMineIcon(m) {
     const isSel = state.selected === m.id;
     const gem   = MINERAL_COLORS[m.mineralType] || '#94a3b8';
-    const g = svgEl('g', { transform: `translate(${m.x},${m.y})`, style: 'cursor:grab', filter: 'url(#shadow)' });
+    const g = svgEl('g', { transform: `translate(${m.x},${m.y})`, style: `cursor:grab;color:${gem}`, filter: 'url(#shadow)' });
 
-    g.appendChild(svgEl('rect',   { x: -13, y: -4, width: 26, height: 14, fill: '#1c1412', stroke: '#4a3000', 'stroke-width': 1.5, rx: 2 }));
-    g.appendChild(svgEl('path',   { d: 'M-13,-4 Q0,-18 13,-4', fill: '#2c1a00', stroke: '#4a3000', 'stroke-width': 1.5 }));
-    g.appendChild(svgEl('line',   { x1: -7, y1: -10, x2:  7, y2: 10, stroke: gem, 'stroke-width': 2, 'stroke-linecap': 'round', opacity: 0.9 }));
-    g.appendChild(svgEl('line',   { x1:  7, y1: -10, x2: -7, y2: 10, stroke: gem, 'stroke-width': 2, 'stroke-linecap': 'round', opacity: 0.9 }));
-    g.appendChild(svgEl('circle', { r: 3.5, fill: gem, opacity: 0.95 }));
-    g.appendChild(svgEl('rect',   { x: -22, y: 25, width: 44, height: 13, rx: 3, fill: 'rgba(30,15,0,0.72)' }));
-
-    const label = svgEl('text', { y: 35, 'text-anchor': 'middle', 'font-size': 10, fill: '#fde68a', 'font-family': 'serif', 'font-weight': 'bold', style: 'user-select:none;pointer-events:none' });
-    label.textContent = m.mineralType;
-    g.appendChild(label);
-
-    if (isSel) g.appendChild(svgEl('circle', { r: 20, fill: 'none', stroke: '#f59e0b', 'stroke-width': 1.5, 'stroke-dasharray': '3 2', opacity: 0.8 }));
+    g.innerHTML = `
+        ${isSel ? '<circle r="20" fill="none" stroke="#f59e0b" stroke-width="1.5" stroke-dasharray="3 2" opacity="0.8"/>' : ''}
+        <use href="#sym-mine"/>
+        <rect x="-22" y="25" width="44" height="13" rx="3" fill="rgba(30,15,0,0.72)"/>
+        <text y="35" text-anchor="middle" font-size="10" fill="#fde68a" font-family="serif" font-weight="bold" style="user-select:none;pointer-events:none">${m.mineralType}</text>
+    `;
 
     g.addEventListener('click', e => { e.stopPropagation(); state.selected = m.id; render(); });
     g.addEventListener('mousedown', e => {
@@ -393,9 +374,7 @@ function render() {
     updateSidebar();
 }
 
-// ═══════════════════════════════════════════════════════════════
 // OBSŁUGA ZDARZEŃ EDYTORA
-// ═══════════════════════════════════════════════════════════════
 
 document.getElementById('btn-randomize').addEventListener('click', () => {
     state.border   = generateRandomPolygon();
@@ -526,9 +505,7 @@ mapSvg.addEventListener('mousemove', e => {
 mapSvg.addEventListener('mouseup',    () => { state.dragging = null; render(); });
 mapSvg.addEventListener('mouseleave', () => { state.dragging = null; render(); });
 
-// ═══════════════════════════════════════════════════════════════
 // API — wywołania z app.js
-// ═══════════════════════════════════════════════════════════════
 
 export function initMapEditor(dataset) {
     // Reset stanu

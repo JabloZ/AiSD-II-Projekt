@@ -2,7 +2,7 @@ import { MINERALS, MINERAL_COLORS } from './constants.js';
 import { state } from './state.js';
 import { svgEl, clearLayer, getSvgPoint } from './svg.js';
 
-// ── Border & territory ─────────────────────────────────────────────────────────
+// Border & territory
 
 function renderBorderAndTerritory() {
     clearLayer('layer-territory');
@@ -20,7 +20,7 @@ function renderBorderAndTerritory() {
     lines.appendChild(svgEl('path', { d, fill: 'none', stroke: '#8b5e0a', 'stroke-width': 1.5, 'stroke-linejoin': 'round' }));
 }
 
-// ── Edge midpoint handles (when adding vertex) ─────────────────────────────────
+// Edge midpoint handles (when adding vertex)
 
 function renderMidHandles() {
     clearLayer('layer-mid-handles');
@@ -35,7 +35,7 @@ function renderMidHandles() {
     });
 }
 
-// ── Border vertices ────────────────────────────────────────────────────────────
+// Border vertices
 
 function renderVertices() {
     clearLayer('layer-vertices');
@@ -83,7 +83,7 @@ function renderVertices() {
     }
 }
 
-// ── House icon ─────────────────────────────────────────────────────────────────
+// House icon
 
 function makeHouseSvg(h) {
     const isSel    = state.selected === h.id;
@@ -118,7 +118,7 @@ function makeHouseSvg(h) {
     return g;
 }
 
-// ── Mine icon ──────────────────────────────────────────────────────────────────
+// Mine icon
 
 function makeMineSvg(m) {
     const isSel = state.selected === m.id;
@@ -153,7 +153,7 @@ function makeMineSvg(m) {
     return g;
 }
 
-// ── Assignment lines ───────────────────────────────────────────────────────────
+// Assignment lines
 
 function renderAssignments() {
     clearLayer('layer-assignments');
@@ -177,7 +177,7 @@ function renderAssignments() {
     });
 }
 
-// ── Houses & mines layers ──────────────────────────────────────────────────────
+// Houses & mines layers
 
 function renderHouses() {
     clearLayer('layer-houses');
@@ -191,7 +191,7 @@ function renderMines() {
     state.mines.forEach(m => layer.appendChild(makeMineSvg(m)));
 }
 
-// ── Sidebar ────────────────────────────────────────────────────────────────────
+// Sidebar
 
 function updateSidebar() {
     const totalDwarfs = state.houses.reduce((s, h) => s + h.dwarfCount, 0);
@@ -283,7 +283,7 @@ function updateSidebar() {
     svg.classList.toggle('dragging',      state.dragging !== null);
 }
 
-// ── Master render ──────────────────────────────────────────────────────────────
+// Main render
 
 export function render() {
     renderBorderAndTerritory();
