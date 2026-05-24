@@ -181,7 +181,7 @@ docker exec -it generator_skrypt python generate.py
 ```
 Następnie zostaniemy zapytani o wprowadzenie parametrow ktore chcemy wygenerowac dla danych.
 
-<<<<<<< HEAD
+
 ### Generowanie danych
 w fazie developmentu generowanie danych odbywa sie poprzez reczne wejscie do kontenera po uruchomieniu projektu.
 ```
@@ -190,14 +190,13 @@ docker exec -it generator_skrypt python generate.py
 ```
 Następnie zostaniemy zapytani o wprowadzenie parametrow ktore chcemy wygenerowac dla danych.
 To be continued...
-=======
+
 ## Baza danych 
 Dzięki dockerowi obydwa kontenery (backend i db) są w tej samej sieci z automatu, więc nie trzeba się gimnastykować aby się połączyć.
 Połączenie odbywa się za pomocą funkcji DbConnect. Fragment kodu: 
 ```c#
             var Cur = new DatabaseConn();
             using var Conn = await Cur.DbConnect();
->>>>>>> 7c2c5adc7e73920675b5121199ed147745be8de1
 
             var DynamicParameters = new DynamicParameters();
             DynamicParameters.Add("p", Deposit.Id);
