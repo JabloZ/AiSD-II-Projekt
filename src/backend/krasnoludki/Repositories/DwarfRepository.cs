@@ -10,7 +10,7 @@ namespace krasnoludki.Repositories{
         {
             var Cur=new DatabaseConn();
             using var Conn = await Cur.DbConnect();
-            const string Command= "SELECT Id, Name, Loudness, DepositAssigned, houseId, depositId from zbior1.Dwarfs";
+            const string Command= "SELECT Id, Name, Loudness, DepositAssigned, houseId, depositId from Dwarfs";
             var Dwarfs = await Conn.QueryAsync<Dwarf>(Command);
         
             return Dwarfs.ToList();
