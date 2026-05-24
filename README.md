@@ -181,6 +181,16 @@ docker exec -it generator_skrypt python generate.py
 ```
 Następnie zostaniemy zapytani o wprowadzenie parametrow ktore chcemy wygenerowac dla danych.
 
+
+### Generowanie danych
+w fazie developmentu generowanie danych odbywa sie poprzez reczne wejscie do kontenera po uruchomieniu projektu.
+```
+docker compose up
+docker exec -it generator_skrypt python generate.py
+```
+Następnie zostaniemy zapytani o wprowadzenie parametrow ktore chcemy wygenerowac dla danych.
+To be continued...
+
 ## Baza danych 
 Dzięki dockerowi obydwa kontenery (backend i db) są w tej samej sieci z automatu, więc nie trzeba się gimnastykować aby się połączyć.
 Połączenie odbywa się za pomocą funkcji DbConnect. Fragment kodu: 
