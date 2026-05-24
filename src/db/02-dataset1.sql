@@ -1,35 +1,41 @@
 --jak zmieniasz tu cos to walnij compose down i compose up, bo narazie nie obslugujemy migracji baz danych i to jest tylko do testowania
+
+SET search_path TO zbior1;
 CREATE TABLE Houses(
     Id INT PRIMARY KEY,
-    Path VARCHAR(255)
+    X INT,
+    Y INT
 );
 CREATE TABLE Minerals(
-    Id INT PRIMARY KEY,
-    Path VARCHAR(255)
+    id INT PRIMARY KEY,
+    name VARCHAR(30)
 );
 CREATE TABLE Deposits(
     Id INT PRIMARY KEY,
-    Path VARCHAR(255)
+    MineralId INT REFERENCES Minerals(id),
+    Capacity INT,
+    X INT,
+    Y INT
 );
 CREATE TABLE Dwarfs(
     Id INT PRIMARY KEY,
-    Path VARCHAR(255)
+    Name VARCHAR(50),
+    Loudness INT,
+    DepositAssigned BOOLEAN,
+    HouseId INT REFERENCES Houses(id),
+    DepositId INT NULL REFERENCES Deposits(id) 
 );
 
 CREATE TABLE Preferences(
-    Id INT PRIMARY KEY,
-    Path VARCHAR(255)
+    dwarf_id INT REFERENCES Dwarfs(id),
+    mineral_id INT REFERENCES Minerals(id),
+    multiplier FLOAT
 );
 
 CREATE TABLE Map(
-    Id INT PRIMARY KEY,
-    Path VARCHAR(255)
+    size_x INT,
+    size_y INT
 );
---CREATE TABLE Distances(
---    FOREIGN KEY house_id REFERENCES House(id),
---    FOREIGN KEY deposit_id REFERENCES Deposit(id),
---    length INT
---)
 
 INSERT INTO Houses VALUES (1, 40, 50);
 INSERT INTO Houses VALUES (2, 50, 50);

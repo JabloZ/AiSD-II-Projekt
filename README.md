@@ -64,6 +64,13 @@ cd src/backend/krasnoludki.Tests
 dotnet test
 ```
 
+### Generowanie danych
+w fazie developmentu generowanie danych odbywa sie poprzez reczne wejscie do kontenera po uruchomieniu projektu.
+```
+docker compose up
+docker exec -it generator_skrypt python generate.py
+```
+Następnie zostaniemy zapytani o wprowadzenie parametrow ktore chcemy wygenerowac dla danych.
 To be continued...
 
 

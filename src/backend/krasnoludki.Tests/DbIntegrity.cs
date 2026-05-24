@@ -1,7 +1,11 @@
-using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
-using krasnoludki.Repositories;
+using krasnoludki.db;
+using krasnoludki.Entities;
+using Dapper;
 using Xunit;
+using Npgsql;
 
 namespace krasnoludki.Repositories
 {
@@ -10,6 +14,8 @@ namespace krasnoludki.Repositories
         [Fact]
         public async Task Database_ConnectionAndDataIntegrity_ShouldBeValid()
         {
+              
+           
             var connectionString = Environment.GetEnvironmentVariable("CONNECTION_STRING");
             if (string.IsNullOrEmpty(connectionString))
             {
