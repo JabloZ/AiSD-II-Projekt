@@ -49,7 +49,7 @@ def gen_insert_houses(number_of_houses,map_x,map_y):
         for id in range(number_of_houses):
             x = random.randint(0, map_x)
             y = random.randint(0, map_y)
-            file.write(f'INSERT INTO House VALUES ({id + 1},{x},{y});\n')
+            file.write(f'INSERT INTO Houses VALUES ({id + 1},{x},{y});\n')
 def gen_insert_preferences(number_of_dwarves,amount_of_minerals):
     with open("dane.txt", "a", encoding="utf-8") as file:
         for id_dwrv in range(1, number_of_dwarves + 1):
