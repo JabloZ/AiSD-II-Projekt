@@ -9,9 +9,11 @@ services:
             - ./src/backend:/app
             - /app/krasnoludki/bin
             - /app/krasnoludki/obj
+            - ./src/backend/krasnoludki/Repositories/test_data:/app/test_data
         environment:
             - CONNECTION_STRING=Host=${DB_HOST};Port=${DB_PORT};Username=${DB_USER};Password=${DB_PASSWORD};Database=${DB_NAME}
-        command: sh -c "dotnet run --project krasnoludki"
+
+        command: sh -c "dotnet test krasnoludki.Tests/krasnoludki.Tests.csproj && dotnet run --project krasnoludki"
     db: 
         build: ./src/db
         container_name: krasnoludki_db
@@ -19,7 +21,7 @@ services:
         ports:
             - "5434:5432"
         volumes:
-            - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql
+            - ./src/db/:/docker-entrypoint-initdb.d
         environment:
             - POSTGRES_USER=${DB_USER}
             - POSTGRES_PASSWORD=${DB_PASSWORD}
