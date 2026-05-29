@@ -1,2 +1,0 @@
-CREATE SCHEMA zbior1;
-CREATE SCHEMA zbior2;
