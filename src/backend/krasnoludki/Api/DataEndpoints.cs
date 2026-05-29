@@ -19,7 +19,7 @@ public static class DataEndpoints
             return conn;
         }
 
-        // ── GET /api/data — wszystkie dane z relacyjnych tabel ────────────────
+        // GET /api/data — wszystkie dane z relacyjnych tabel
         app.MapGet("/api/data", async () =>
         {
             var repo = new MainRepository();
@@ -55,14 +55,14 @@ public static class DataEndpoints
             });
         });
 
-        // ── GET /api/assign-from-db — uruchamia algorytm na danych z DB ───────
-        app.MapGet("/api/assign-from-db", async (string? algorithm) =>
+        // GET /api/assign-from-db — uruchamia algorytm na danych z DB
+        app.MapGet("/api/assign-from-db", async () =>
         {
             var repo = new MainRepository();
             var (dwarfs, _, deposits) = await repo.GetDataSetupFromDB();
 
             var solver = new AssignmentSolver();
-            solver.SolveAssignments(dwarfs, deposits, algorithm ?? "mcmf");
+            solver.SolveAssignments(dwarfs, deposits);
 
             var assignments = dwarfs
                 .Where(d => d.DepositAssigned && d.Deposit != null)
@@ -84,7 +84,7 @@ public static class DataEndpoints
             return Results.Ok(new AssignResultDto(assignments, solver.Logs, totalDist));
         });
 
-        // ── PUT /api/setup — zapisuje cały zestaw danych do relacyjnych tabel ─
+        // PUT /api/setup — zapisuje cały zestaw danych do relacyjnych tabel
         app.MapPut("/api/setup", async (SetupBodyDto dto) =>
         {
             using var db = await Db();
@@ -168,7 +168,7 @@ public static class DataEndpoints
             }
         });
 
-        // ── POST /api/assign — uruchamia algorytm na danych z requesta (legacy)
+        // POST /api/assign — uruchamia algorytm na danych z requesta
         app.MapPost("/api/assign", (AssignRequestDto req) =>
         {
             var mineralIds = req.Mines
@@ -218,7 +218,7 @@ public static class DataEndpoints
             }
 
             var solver  = new AssignmentSolver();
-            solver.SolveAssignments(dwarfs, deposits, req.Algorithm ?? "mcmf");
+            solver.SolveAssignments(dwarfs, deposits);
 
             var assignments = dwarfs
                 .Where(d => d.DepositAssigned && d.Deposit != null)

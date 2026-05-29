@@ -9,7 +9,7 @@ public static class DatasetEndpoints
     {
         NpgsqlConnection PublicDb() => new NpgsqlConnection(connStr);
 
-        // ── GET /api/datasets — lista zbiorów ─────────────────────────────────
+        // GET /api/datasets — lista zbiorów
         app.MapGet("/api/datasets", async () =>
         {
             using var db = PublicDb();
@@ -21,7 +21,7 @@ public static class DatasetEndpoints
             });
         });
 
-        // ── POST /api/datasets — nowy zbiór ───────────────────────────────────
+        // POST /api/datasets — nowy zbiór
         app.MapPost("/api/datasets", async (CreateDatasetDto dto) =>
         {
             using var db = PublicDb();
@@ -33,7 +33,7 @@ public static class DatasetEndpoints
             return Results.Ok(new { name = schemaName, label = dto.Label ?? schemaName });
         });
 
-        // ── DELETE /api/datasets/{name} — usuń zbiór ──────────────────────────
+        // DELETE /api/datasets/{name} — usuń zbiór
         app.MapDelete("/api/datasets/{name}", async (string name) =>
         {
             if (name == Globals.ActualDataset)
@@ -48,7 +48,7 @@ public static class DatasetEndpoints
             return Results.Ok();
         });
 
-        // ── PUT /api/datasets/{name}/activate — przełącz aktywny zbiór ────────
+        // PUT /api/datasets/{name}/activate — przełącz aktywny zbiór
         app.MapPut("/api/datasets/{name}/activate", async (string name) =>
         {
             using var db = PublicDb();

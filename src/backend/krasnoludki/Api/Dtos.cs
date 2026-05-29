@@ -10,7 +10,7 @@ record HouseDto(string Id, double X, double Y, int DwarfCount,
                 List<string> MineralPreferences, List<string>? DwarfNames = null,
                 List<List<string>>? DwarfPreferences = null);
 record MineDto(string Id, double X, double Y, string MineralType, int Capacity);
-record AssignRequestDto(List<HouseDto> Houses, List<MineDto> Mines, string? Algorithm = "mcmf");
+record AssignRequestDto(List<HouseDto> Houses, List<MineDto> Mines);
 record AssignmentDto(string HouseId, string MineId, int Count, double Distance);
 record AssignResultDto(List<AssignmentDto> Assignments, List<string> Logs, double TotalDistance);
 record CreateDatasetDto(string Label);

@@ -1,3 +1,6 @@
+using System;
+using System.Collections.Generic;
+using System.Linq;
 using krasnoludki.Entities;
 using krasnoludki.Repositories;
 
@@ -5,28 +8,30 @@ namespace krasnoludki.Algorithms
 {
     public class AssignmentSolver
     {
-        // ── Shared state ────────────────────────────────────────────────────
-        private List<GraphNode> nodes = new();
+        private List<GraphNode> nodes = new List<GraphNode>();
         private GraphNode source = null!;
-        private GraphNode sink   = null!;
+        private GraphNode sink = null!;
 
-        public List<string> Logs { get; private set; } = new();
+        public List<string> Logs { get; private set; } = new List<string>();
 
         private void Log(string msg) =>
             Logs.Add($"[{DateTime.Now:HH:mm:ss}] {msg}");
 
-        // ── Public entry point ───────────────────────────────────────────────
-
-        /// <summary>
-        /// Assigns dwarfs to deposits using the chosen algorithm.
-        /// Results are written back into each Dwarf object (DepositId, Deposit, DepositAssigned).
-        /// </summary>
-        public void SolveAssignments(List<Dwarf> dwarfs, List<Deposit> deposits, string algorithm = "mcmf")
+        public void SolveAssignments(List<Dwarf> dwarfs, List<Deposit> deposits)
         {
             Logs.Clear();
-            SolveMCMF(dwarfs, deposits);
+            Log("Algorytm: Min-Cost Max-Flow (Successive Shortest Paths)");
+            Log($"Krasnoludków: {dwarfs.Count}  |  Kopalni: {deposits.Count}");
+            Log("──────────────────────────────────────────");
+            Log("Budowanie grafu rezydualnego...");
 
-            // ── Summary ──────────────────────────────────────────────────────
+            BuildGraph(dwarfs, deposits);
+
+            Log($"Graf: {nodes.Count} wierzchołków");
+            Log("Obliczanie najtańszego przepływu...");
+
+            CalculateMinCostMaxFlow(dwarfs);
+
             int assigned   = dwarfs.Count(d => d.DepositAssigned);
             int unassigned = dwarfs.Count - assigned;
             double totalDist = dwarfs
@@ -40,44 +45,143 @@ namespace krasnoludki.Algorithms
                 Log($"Bez przydziału: {unassigned} krasnoludków (brak zgodnych kopalni lub brak pojemności)");
         }
 
-        // ═══════════════════════════════════════════════════════════════════
-        //  ALGORYTM 1 — Min-Cost Max-Flow (optymalny)
-        //
-        //  Modelujemy problem jako sieć przepływową:
-        //    Źródło → Krasnoludek (cap=1, cost=0)
-        //    Krasnoludek → Kopalnia (cap=1, cost=dystans) — tylko zgodne minerały
-        //    Kopalnia → Ujście (cap=pojemność, cost=0)
-        //  Successive Shortest Paths z relaksacją Bellmana-Forda.
-        //  Złożoność: O(V · E · flow) gdzie flow ≤ liczba krasnoludków
-        // ═══════════════════════════════════════════════════════════════════
-        private void SolveMCMF(List<Dwarf> dwarfs, List<Deposit> deposits)
+        private void BuildGraph(List<Dwarf> dwarfs, List<Deposit> deposits)
         {
-            Log("Algorytm: Min-Cost Max-Flow (Successive Shortest Paths)");
-            Log($"Krasnoludków: {dwarfs.Count}  |  Kopalni: {deposits.Count}");
-            Log("──────────────────────────────────────────");
-            Log("Budowanie grafu rezydualnego...");
+            nodes.Clear();
+            source = new GraphNode("Source", GraphNodeType.Source);
+            sink = new GraphNode("Sink", GraphNodeType.Sink);
+            nodes.Add(source);
+            nodes.Add(sink);
 
-            BuildGraph(dwarfs, deposits);
+            var dwarfNodes = new Dictionary<int, GraphNode>();
+            var depositNodes = new Dictionary<int, GraphNode>();
 
-            Log($"Graf: {nodes.Count} wierzchołków");
-            Log("Obliczanie najtańszego przepływu...");
+            // 1. Krawędzie: Źródło -> Krasnoludki (Pojemność 1, Koszt 0)
+            foreach (var dwarf in dwarfs)
+            {
+                var node = new GraphNode($"D_{dwarf.Id}", GraphNodeType.Dwarf, dwarf);
+                nodes.Add(node);
+                dwarfNodes[dwarf.Id] = node;
 
-            CalculateMinCostMaxFlow();
+                AddEdge(source, node, 1, 0);
+            }
 
-            // Extract results AFTER the full flow computation
+            // 2. Krawędzie: Kopalnie -> Ujście (Pojemność = Capacity, Koszt 0)
+            foreach (var deposit in deposits)
+            {
+                var node = new GraphNode($"Dep_{deposit.Id}", GraphNodeType.Deposit, deposit);
+                nodes.Add(node);
+                depositNodes[deposit.Id] = node;
+
+                AddEdge(node, sink, deposit.Capacity, 0);
+            }
+
+            // 3. Krawędzie: Krasnoludki -> Kopalnie (Pojemność 1, Koszt = Dystans)
+            foreach (var dwarf in dwarfs)
+            {
+                if (dwarf.House == null) continue;
+
+                foreach (var deposit in deposits)
+                {
+                    // Sprawdzamy czy słownik ma wpis o tym minerale i czy mnożnik jest większy od zera
+                    if (dwarf.preferences != null &&
+                        dwarf.preferences.TryGetValue(deposit.MineralId, out float multiplier) &&
+                        multiplier > 0)
+                    {
+                        double dist = DistanceRepository.CalculateDistance(dwarf.House, deposit);
+                        AddEdge(dwarfNodes[dwarf.Id], depositNodes[deposit.Id], 1, dist);
+                    }
+                }
+            }
+        }
+
+        private void AddEdge(GraphNode from, GraphNode to, int capacity, double cost)
+        {
+            // Główna krawędź
+            var edge = new GraphEdge(from, to, capacity, cost);
+            // Krawędź powrotna (rezydualna) - pojemność 0, koszt ujemny (cofa dystans)
+            var residual = new GraphEdge(to, from, 0, -cost);
+
+            edge.Residual = residual;
+            residual.Residual = edge;
+
+            from.Edges.Add(edge);
+            to.Edges.Add(residual);
+        }
+
+        private void CalculateMinCostMaxFlow(List<Dwarf> dwarfs)
+        {
+            // Algorytm z użyciem Bellmana-Forda do znalezienia najtańszej ścieżki
+            while (true)
+            {
+                var dist = new Dictionary<GraphNode, double>();
+                var parentEdge = new Dictionary<GraphNode, GraphEdge>();
+
+                foreach (var node in nodes) dist[node] = double.MaxValue;
+                dist[source] = 0;
+
+                // Bellman-Ford
+                bool changed = true;
+                for (int i = 0; i < nodes.Count - 1 && changed; i++)
+                {
+                    changed = false;
+                    foreach (var node in nodes)
+                    {
+                        if (dist[node] == double.MaxValue) continue;
+
+                        foreach (var edge in node.Edges)
+                        {
+                            if (edge.RemainingCapacity > 0 && dist[edge.To] > dist[node] + edge.Cost)
+                            {
+                                dist[edge.To] = dist[node] + edge.Cost;
+                                parentEdge[edge.To] = edge;
+                                changed = true;
+                            }
+                        }
+                    }
+                }
+
+                // Jeśli nie znaleźliśmy drogi do ujścia, znaczy to, że wykorzystaliśmy cały możliwy przepływ
+                if (dist[sink] == double.MaxValue)
+                    break;
+
+                // Szukamy "wąskiego gardła" na znalezionej ścieżce
+                int pushFlow = int.MaxValue;
+                var curr = sink;
+                while (curr != source)
+                {
+                    var edge = parentEdge[curr];
+                    pushFlow = Math.Min(pushFlow, edge.RemainingCapacity);
+                    curr = edge.From;
+                }
+
+                // Przepychamy krasnoludka i aktualizujemy sieć rezydualną
+                curr = sink;
+                while (curr != source)
+                {
+                    var edge = parentEdge[curr];
+                    edge.Flow += pushFlow;
+                    edge.Residual!.Flow -= pushFlow; // Krawędź powrotna zyskuje możliwość "cofnięcia" krasnoludka
+                    curr = edge.From;
+                }
+            }
+
+            // Analiza grafu po zakończeniu przepływu
             foreach (var node in nodes.Where(n => n.Type == GraphNodeType.Dwarf))
             {
                 var dwarf = (Dwarf)node.OriginalEntity!;
+
+                // Szukamy krawędzi, którą faktycznie poszedł przepływ (Flow > 0) do kopalni
                 foreach (var edge in node.Edges)
                 {
                     if (edge.Flow > 0 && edge.To.Type == GraphNodeType.Deposit)
                     {
                         var deposit = (Deposit)edge.To.OriginalEntity!;
-                        dwarf.DepositId       = deposit.Id;
-                        dwarf.Deposit         = deposit;
+                        dwarf.DepositId = deposit.Id;
+                        dwarf.Deposit = deposit;
                         dwarf.DepositAssigned = true;
-                        double dist = DistanceRepository.CalculateDistance(dwarf.House!, deposit);
-                        Log($"Przypisano {dwarf.Name} (id:{dwarf.Id}) → Kopalnia #{deposit.Id} [dystans: {dist:F1}]");
+                        double d = DistanceRepository.CalculateDistance(dwarf.House!, deposit);
+                        Log($"Przypisano {dwarf.Name} (id:{dwarf.Id}) → Kopalnia #{deposit.Id} [dystans: {d:F1}]");
                         break;
                     }
                 }
@@ -86,115 +190,5 @@ namespace krasnoludki.Algorithms
                     Log($"Brak przydziału: {dwarf.Name} (id:{dwarf.Id}) — brak zgodnych kopalni");
             }
         }
-
-        private void BuildGraph(List<Dwarf> dwarfs, List<Deposit> deposits)
-        {
-            nodes.Clear();
-            source = new GraphNode("Source", GraphNodeType.Source);
-            sink   = new GraphNode("Sink",   GraphNodeType.Sink);
-            nodes.Add(source);
-            nodes.Add(sink);
-
-            var dwarfNodes   = new Dictionary<int, GraphNode>();
-            var depositNodes = new Dictionary<int, GraphNode>();
-
-            // Źródło → Krasnoludek (cap=1, cost=0)
-            foreach (var dwarf in dwarfs)
-            {
-                var node = new GraphNode($"D_{dwarf.Id}", GraphNodeType.Dwarf, dwarf);
-                nodes.Add(node);
-                dwarfNodes[dwarf.Id] = node;
-                AddEdge(source, node, 1, 0);
-            }
-
-            // Kopalnia → Ujście (cap=pojemność, cost=0)
-            foreach (var deposit in deposits)
-            {
-                var node = new GraphNode($"Dep_{deposit.Id}", GraphNodeType.Deposit, deposit);
-                nodes.Add(node);
-                depositNodes[deposit.Id] = node;
-                AddEdge(node, sink, deposit.Capacity, 0);
-            }
-
-            // Krasnoludek → Kopalnia (cap=1, cost=dystans) — tylko zgodne minerały
-            foreach (var dwarf in dwarfs)
-            {
-                if (dwarf.House == null) continue;
-
-                var preferredMinerals = dwarf.preferences?.Keys.ToHashSet() ?? new HashSet<int>();
-
-                foreach (var deposit in deposits)
-                {
-                    if (!preferredMinerals.Contains(deposit.MineralId)) continue;
-
-                    double dist = DistanceRepository.CalculateDistance(dwarf.House, deposit);
-                    AddEdge(dwarfNodes[dwarf.Id], depositNodes[deposit.Id], 1, dist);
-                }
-            }
-        }
-
-        private void AddEdge(GraphNode from, GraphNode to, int capacity, double cost)
-        {
-            var edge     = new GraphEdge(from, to, capacity,  cost);
-            var residual = new GraphEdge(to, from, 0,        -cost);
-            edge.Residual     = residual;
-            residual.Residual = edge;
-            from.Edges.Add(edge);
-            to.Edges.Add(residual);
-        }
-
-        private void CalculateMinCostMaxFlow()
-        {
-            while (true)
-            {
-                // Bellman-Ford: find shortest (cheapest) path from source to sink
-                var dist       = new Dictionary<GraphNode, double>();
-                var parentEdge = new Dictionary<GraphNode, GraphEdge>();
-
-                foreach (var node in nodes) dist[node] = double.MaxValue;
-                dist[source] = 0;
-
-                bool relaxed = true;
-                for (int i = 0; i < nodes.Count - 1 && relaxed; i++)
-                {
-                    relaxed = false;
-                    foreach (var node in nodes)
-                    {
-                        if (dist[node] == double.MaxValue) continue;
-                        foreach (var edge in node.Edges)
-                        {
-                            if (edge.RemainingCapacity > 0 && dist[edge.To] > dist[node] + edge.Cost)
-                            {
-                                dist[edge.To]       = dist[node] + edge.Cost;
-                                parentEdge[edge.To] = edge;
-                                relaxed = true;
-                            }
-                        }
-                    }
-                }
-
-                // No augmenting path to sink → optimal flow reached
-                if (dist[sink] == double.MaxValue) break;
-
-                // Find bottleneck along the path
-                int flow = int.MaxValue;
-                for (var n = sink; n != source; )
-                {
-                    var e = parentEdge[n];
-                    flow = Math.Min(flow, e.RemainingCapacity);
-                    n = e.From;
-                }
-
-                // Push flow along the path, update residual graph
-                for (var n = sink; n != source; )
-                {
-                    var e = parentEdge[n];
-                    e.Flow           += flow;
-                    e.Residual!.Flow -= flow;
-                    n = e.From;
-                }
-            }
-        }
-
     }
 }
