@@ -7,6 +7,7 @@ namespace krasnoludki.db {
             var conn = new NpgsqlConnection(connString);
             await conn.OpenAsync();
             await conn.ExecuteAsync($"SET search_path TO \"{krasnoludki.Globals.ActualDataset}\"");
+            return conn;
         }
     }
 }
