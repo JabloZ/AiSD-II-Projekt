@@ -50,6 +50,7 @@
     </main>
 
     <footer class="menu-footer">
+        <button id="btn-decompress-huff" class="btn-decompress-menu">🔓 Dekompresuj .huff</button>
         <div class="selection-summary">
             <span id="summary-dataset" class="summary-item">Zbiór: <em>zbior1</em></span>
             <span id="summary-algo" class="summary-item">Algorytm: <em>nie wybrano</em></span>
@@ -88,6 +89,7 @@
 
         <div id="log-actions" class="log-actions hidden">
             <button id="btn-download-logs" class="btn-download">↓ Pobierz logi (.txt)</button>
+            <button id="btn-download-huff" class="btn-download btn-download-huff">🗜 Pobierz .huff</button>
         </div>
 
         <div id="viz-section" class="viz-section hidden">
@@ -297,6 +299,66 @@
         </symbol>
     </defs>
 </svg>
+
+<!-- ════════════════ MODAL: DEKOMPRESJA .huff ════════════════ -->
+<div id="modal-decompress" class="modal-overlay hidden">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2 class="modal-title">🔓 Dekompresja pliku .huff</h2>
+            <button class="modal-close" data-close-modal="modal-decompress">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <p class="modal-desc">
+                Wrzuć plik <code style="color:var(--green);background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:3px">.huff</code>
+                pobrany z tej aplikacji. Algorytm Huffmana odczyta nagłówek z drzewem kodów
+                i odkompresuje logi do oryginalnego tekstu.
+            </p>
+
+            <!-- Strefa drag & drop -->
+            <div id="decomp-drop-zone" class="decomp-drop-zone" tabindex="0" role="button">
+                <div class="decomp-drop-icon">📂</div>
+                <span id="decomp-drop-label">Upuść plik .huff tutaj lub kliknij aby wybrać</span>
+                <input id="decomp-file-input" type="file" accept=".huff" style="display:none">
+            </div>
+
+            <!-- Błąd -->
+            <p id="decomp-error" class="decomp-error hidden"></p>
+
+            <!-- Wynik -->
+            <div id="decomp-result" class="hidden">
+                <div class="decomp-stats-grid">
+                    <div class="decomp-stat-card">
+                        <span class="decomp-stat-label">Oryginał</span>
+                        <span id="decomp-stat-origbits" class="decomp-stat-value">—</span>
+                    </div>
+                    <div class="decomp-stat-card">
+                        <span class="decomp-stat-label">Zakodowane bity</span>
+                        <span id="decomp-stat-encbits" class="decomp-stat-value">—</span>
+                    </div>
+                    <div class="decomp-stat-card decomp-stat-accent">
+                        <span class="decomp-stat-label">Oszczędność</span>
+                        <span id="decomp-stat-saved" class="decomp-stat-value">—</span>
+                    </div>
+                    <div class="decomp-stat-card">
+                        <span class="decomp-stat-label">Plik .huff</span>
+                        <span id="decomp-stat-filesize" class="decomp-stat-value">—</span>
+                    </div>
+                </div>
+
+                <div class="decomp-text-wrap">
+                    <pre id="decomp-text-output" class="decomp-text-output"></pre>
+                </div>
+
+                <div class="decomp-actions">
+                    <button id="btn-decomp-copy" class="btn-download">⎘ Kopiuj logi</button>
+                    <button id="btn-decomp-save-txt" class="btn-download">↓ Zapisz jako .txt</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
 
 <script type="module" src="app.js"></script>
 </body>
