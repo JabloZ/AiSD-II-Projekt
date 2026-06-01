@@ -23,6 +23,42 @@ const ALGORITHMS = [
             'Na podstawie krawędzi z Flow > 0 przypisz krasnoludom konkretne kopalnie',
         ],
     },
+    {
+        id: 'patrol',
+        name: 'Patrol Solver (Graham Scan)',
+        shortName: 'Patrol',
+        complexity: 'O(n log n)',
+        spaceComplexity: 'O(n)',
+        description: 'Wyznacza optymalną trasę patrolową obejmującą wszystkie domki i kopalnie na mapie. Algorytm Grahama oblicza wypukłą otoczkę (convex hull) zbioru punktów — najkrótszy wielokąt wypukły zawierający wszystkie obiekty. Strażnicy patrolujący tę trasę zapewniają nadzór nad całym terenem przy minimalnej długości trasy granicznej.',
+        steps: [
+            'Zbierz wszystkie domki i kopalnie jako punkty na płaszczyźnie',
+            'Znajdź pivot: punkt najniżej położony na mapie (przy remisie — najbardziej wysunięty w lewo)',
+            'Posortuj pozostałe punkty według kąta biegunowego względem pivota (sortowanie kątowe)',
+            'Jeśli dwa punkty leżą na tej samej prostej co pivot, zostaw tylko ten najdalszy',
+            'Inicjalizuj stos: wrzuć pivot i dwa pierwsze punkty po sortowaniu',
+            'Dla każdego kolejnego punktu: dopóki trójka (przedostatni, ostatni na stosie, nowy punkt) skręca w prawo lub jest współliniowa — zdejmuj ze stosu',
+            'Wrzuć nowy punkt na stos — gwarantuje to wyłącznie lewoskręty',
+            'Punkty pozostałe na stosie tworzą wypukłą otoczkę — trasę patrolową',
+        ],
+    },
+    {
+        id: 'border-defense',
+        name: 'Border Defense Solver (Segment Tree)',
+        shortName: 'BorderDef',
+        complexity: 'O(n log n)',
+        spaceComplexity: 'O(n)',
+        description: 'Organizuje obronę granicy królestwa przy użyciu drzewa przedziałowego (Segment Tree). Krasnoludki rozmieszczone wzdłuż granicy mają różne wartości głośności — im głośniejszy krasnoludek, tym skuteczniej dowodzi sąsiednimi strażnikami. Drzewo przedziałowe umożliwia błyskawiczne (O(log n)) znajdowanie najgłośniejszego dowódcy dla dowolnego odcinka muru.',
+        steps: [
+            'Umieść krasnoludki wzdłuż kolejnych wierzchołków granicy królestwa',
+            'Zbuduj drzewo przedziałowe (Segment Tree) na liście krasnoludków w czasie O(n)',
+            'Każdy liść drzewa odpowiada jednemu krasnoludkowi na murze',
+            'Każdy węzeł wewnętrzny przechowuje krasnoludka o największej głośności z całego poddrzewa',
+            'Podziel mur na segmenty obronne (co 3 wierzchołki granicy)',
+            'Dla każdego segmentu wykonaj zapytanie przedziałowe Query(L, R) w czasie O(log n)',
+            'Zapytanie zwraca najgłośniejszego krasnoludka z danego odcinka — zostaje on dowódcą segmentu',
+            'Wyświetl przypisania: segment muru → imię i głośność dowódcy',
+        ],
+    },
 ];
 
 // ═══════════════════════════════════════════════════════════════
@@ -100,7 +136,18 @@ async function runAlgorithm(algoId, onLog, onDone) {
     lastAssignments = [];
     lastTotalDist   = 0;
 
-    const algo    = ALGORITHMS.find(a => a.id === algoId);
+    const algo = ALGORITHMS.find(a => a.id === algoId);
+
+    if (algoId === 'patrol') {
+        await runPatrolSolver(onLog, onDone);
+        return;
+    }
+    if (algoId === 'border-defense') {
+        await runBorderDefenseSolver(onLog, onDone);
+        return;
+    }
+
+    // MCMF — oryginalna logika
     const algoMap = { hungarian: 'mcmf', greedy: 'greedy', random: 'random' };
     const algoKey = algoMap[algoId] || 'mcmf';
 
@@ -131,6 +178,214 @@ async function runAlgorithm(algoId, onLog, onDone) {
         lastLogs.push(msg);
         onDone(lastLogs, []);
     }
+}
+
+// ═══════════════════════════════════════════════════════════════
+// PATROL SOLVER — Graham Scan (wypukła otoczka)
+// ═══════════════════════════════════════════════════════════════
+
+async function runPatrolSolver(onLog, onDone) {
+    const ts = () => new Date().toLocaleTimeString('pl-PL', { hour12: false });
+
+    function log(msg) {
+        lastLogs.push(msg);
+        onLog(msg);
+    }
+
+    log(`[${ts()}] Algorytm: Patrol Solver (Graham Scan)`);
+    log(`[${ts()}] ──────────────────────────────────────────`);
+
+    if (!currentVizData) {
+        log(`[${ts()}] BŁĄD: Brak danych z bazy — nie można uruchomić algorytmu.`);
+        onDone(lastLogs, []);
+        return;
+    }
+
+    const { houses, mines } = currentVizData;
+    const allPoints = [
+        ...houses.map(h => ({ x: Math.round(h.x), y: Math.round(h.y), label: h.name || `Domek ${h.id}`, type: 'house', id: h.id })),
+        ...mines.map(m  => ({ x: Math.round(m.x), y: Math.round(m.y), label: `Kopalnia (${m.mineral})`, type: 'mine', id: m.id })),
+    ].filter(p => p.x != null && p.y != null);
+
+    log(`[${ts()}] Punkty wejściowe: ${allPoints.length} (${houses.length} domków + ${mines.length} kopalni)`);
+
+    if (allPoints.length < 3) {
+        log(`[${ts()}] Za mało punktów (minimum 3) — nie można wyznaczyć otoczki.`);
+        onDone(lastLogs, []);
+        return;
+    }
+
+    // Krok 1 — pivot
+    let pivotIdx = 0;
+    for (let i = 1; i < allPoints.length; i++) {
+        const p = allPoints[i], best = allPoints[pivotIdx];
+        if (p.y > best.y || (p.y === best.y && p.x < best.x)) pivotIdx = i;
+    }
+    const tmp = allPoints[0]; allPoints[0] = allPoints[pivotIdx]; allPoints[pivotIdx] = tmp;
+    const pivot = allPoints[0];
+    log(`[${ts()}] Pivot (najniżej): ${pivot.label} (${pivot.x}, ${pivot.y})`);
+
+    // Krok 2 — sortowanie kątowe
+    function cross(o, a, b) { return (a.x - o.x) * (b.y - o.y) - (a.y - o.y) * (b.x - o.x); }
+    function dist2(a, b)    { return (a.x - b.x) ** 2 + (a.y - b.y) ** 2; }
+
+    const rest = allPoints.slice(1).sort((a, b) => {
+        const c = cross(pivot, a, b);
+        if (c !== 0) return c < 0 ? 1 : -1;
+        return dist2(pivot, a) - dist2(pivot, b);
+    });
+
+    // Usuń współliniowe — zostaw tylko najdalszy
+    const filtered = [pivot];
+    for (let i = 0; i < rest.length; i++) {
+        while (i < rest.length - 1 && cross(pivot, rest[i], rest[i + 1]) === 0) i++;
+        filtered.push(rest[i]);
+    }
+
+    log(`[${ts()}] Po sortowaniu kątowym i usunięciu współliniowych: ${filtered.length} punktów`);
+
+    if (filtered.length < 3) {
+        log(`[${ts()}] Wszystkie punkty współliniowe — otoczka zdegenerowana.`);
+        onDone(lastLogs, []);
+        return;
+    }
+
+    // Krok 3 — stos Grahama
+    const stack = [filtered[0], filtered[1], filtered[2]];
+    for (let i = 3; i < filtered.length; i++) {
+        while (stack.length > 1 && cross(stack[stack.length - 2], stack[stack.length - 1], filtered[i]) <= 0) {
+            stack.pop();
+        }
+        stack.push(filtered[i]);
+    }
+
+    log(`[${ts()}] ══════════════════════════════════════════`);
+    log(`[${ts()}] Trasa patrolowa (${stack.length} punktów):`);
+
+    let totalLen = 0;
+    for (let i = 0; i < stack.length; i++) {
+        const next = stack[(i + 1) % stack.length];
+        const seg  = Math.sqrt(dist2(stack[i], next));
+        totalLen  += seg;
+        log(`[${ts()}]   ${i + 1}. ${stack[i].label} (${stack[i].x}, ${stack[i].y}) → ${next.label} [${Math.round(seg)} px]`);
+    }
+    log(`[${ts()}] Łączna długość trasy: ${Math.round(totalLen)} px`);
+    log(`[${ts()}] Punkty wewnątrz (chronione): ${allPoints.length - stack.length}`);
+
+    onDone(lastLogs, stack);
+}
+
+// ═══════════════════════════════════════════════════════════════
+// BORDER DEFENSE SOLVER — Segment Tree
+// ═══════════════════════════════════════════════════════════════
+
+async function runBorderDefenseSolver(onLog, onDone) {
+    const ts = () => new Date().toLocaleTimeString('pl-PL', { hour12: false });
+
+    function log(msg) {
+        lastLogs.push(msg);
+        onLog(msg);
+    }
+
+    log(`[${ts()}] Algorytm: Border Defense Solver (Segment Tree)`);
+    log(`[${ts()}] ──────────────────────────────────────────`);
+
+    if (!currentVizData) {
+        log(`[${ts()}] BŁĄD: Brak danych z bazy — nie można uruchomić algorytmu.`);
+        onDone(lastLogs, []);
+        return;
+    }
+
+    const { border, houses } = currentVizData;
+
+    if (!border || border.length < 3) {
+        log(`[${ts()}] BŁĄD: Granica królestwa ma za mało wierzchołków (minimum 3).`);
+        onDone(lastLogs, []);
+        return;
+    }
+
+    // Zbierz wszystkich krasnoludków z domków
+    const allDwarfs = [];
+    for (const h of houses) {
+        for (const d of (h.dwarfs || [])) {
+            allDwarfs.push({ ...d, houseName: h.name || `Domek ${h.id}` });
+        }
+    }
+
+    if (allDwarfs.length === 0) {
+        log(`[${ts()}] BŁĄD: Brak krasnoludków w bazie danych.`);
+        onDone(lastLogs, []);
+        return;
+    }
+
+    // Przypisz głośność (losowa ale deterministyczna na bazie id)
+    const dwarfsOnBorder = allDwarfs.map((d, i) => ({
+        ...d,
+        borderIdx: i % border.length,
+        loudness: (d.name.charCodeAt(0) % 10) + (d.name.length % 5) + 1,
+    }));
+
+    log(`[${ts()}] Wierzchołki granicy: ${border.length}`);
+    log(`[${ts()}] Krasnoludki na murze: ${dwarfsOnBorder.length}`);
+    log(`[${ts()}] Budowanie drzewa przedziałowego (Segment Tree)...`);
+
+    const n = dwarfsOnBorder.length;
+
+    // Budowa Segment Tree
+    const tree = new Array(4 * n).fill(null);
+
+    function build(node, start, end) {
+        if (start === end) {
+            tree[node] = dwarfsOnBorder[start];
+            return;
+        }
+        const mid = (start + end) >> 1;
+        build(2 * node, start, mid);
+        build(2 * node + 1, mid + 1, end);
+        tree[node] = tree[2 * node].loudness >= tree[2 * node + 1].loudness
+            ? tree[2 * node]
+            : tree[2 * node + 1];
+    }
+
+    function query(node, start, end, L, R) {
+        if (R < start || L > end) return null;
+        if (L <= start && end <= R) return tree[node];
+        const mid = (start + end) >> 1;
+        const left  = query(2 * node,     start, mid,     L, R);
+        const right = query(2 * node + 1, mid + 1, end,   L, R);
+        if (!left)  return right;
+        if (!right) return left;
+        return left.loudness >= right.loudness ? left : right;
+    }
+
+    build(1, 0, n - 1);
+    log(`[${ts()}] Drzewo zbudowane — ${n} liści, ${Math.ceil(Math.log2(n)) + 1} poziomów`);
+
+    // Podziel mur na segmenty (co ~3 krasnoludki)
+    const SEGMENT_SIZE = Math.max(1, Math.ceil(n / Math.ceil(n / 3)));
+    const segments = [];
+
+    for (let L = 0; L < n; L += SEGMENT_SIZE) {
+        const R = Math.min(L + SEGMENT_SIZE - 1, n - 1);
+        const commander = query(1, 0, n - 1, L, R);
+        segments.push({ L, R, commander });
+    }
+
+    log(`[${ts()}] ══════════════════════════════════════════`);
+    log(`[${ts()}] Przydział dowódców segmentów muru:`);
+
+    for (let i = 0; i < segments.length; i++) {
+        const { L, R, commander } = segments[i];
+        const vStart = dwarfsOnBorder[L].borderIdx;
+        const vEnd   = dwarfsOnBorder[R].borderIdx;
+        log(`[${ts()}]   Segment ${i + 1} [krasnoludki ${L + 1}–${R + 1}, wierzchołki ${vStart + 1}–${vEnd + 1}]:`);
+        log(`[${ts()}]     Dowódca: ${commander.name} (głośność: ${commander.loudness}) — ${commander.houseName}`);
+    }
+
+    log(`[${ts()}] Segmentów obrony: ${segments.length}`);
+    log(`[${ts()}] Krasnoludków na murze: ${n}`);
+
+    onDone(lastLogs, segments);
 }
 
 function downloadLogs(filename) {
@@ -369,12 +624,19 @@ document.getElementById('btn-execute').addEventListener('click', () => {
             out.appendChild(p);
             out.scrollTop = out.scrollHeight;
         },
-        function(logs, assignments) {
+        function(logs, result) {
             document.getElementById('log-status').textContent = `gotowe · ${logs.length} linii`;
             btnExec.disabled = false;
             document.getElementById('log-actions').classList.remove('hidden');
-            renderBipartiteGraph(currentVizData, assignments);
-            renderMapViz(currentVizData, assignments);
+
+            if (algoId === 'patrol') {
+                renderPatrolViz(currentVizData, result);
+            } else if (algoId === 'border-defense') {
+                renderBorderDefenseViz(currentVizData, result);
+            } else {
+                renderBipartiteGraph(currentVizData, result);
+                renderMapViz(currentVizData, result);
+            }
         }
     );
 });
@@ -630,8 +892,251 @@ function renderMapViz(dataset, assignments) {
 }
 
 // ═══════════════════════════════════════════════════════════════
-// NARZĘDZIA
+// WIZUALIZACJA — PATROL SOLVER (wypukła otoczka)
 // ═══════════════════════════════════════════════════════════════
+
+function renderPatrolViz(dataset, hullPoints) {
+    // Ukryj grafy przydziałów — nie dotyczą tego algorytmu
+    document.getElementById('viz-section').classList.add('hidden');
+
+    const section = document.getElementById('map-viz-section');
+    if (!dataset || !hullPoints || hullPoints.length < 3) {
+        section.classList.add('hidden');
+        return;
+    }
+
+    const svg = document.getElementById('map-viz-svg');
+    const NS  = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs, text) {
+        const node = document.createElementNS(NS, tag);
+        for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+
+    // Tło mapy
+    svg.innerHTML = `
+        <defs>
+            <radialGradient id="mvp2" cx="50%" cy="50%" r="70%">
+                <stop offset="0%"   stop-color="#f5e6c0"/>
+                <stop offset="60%"  stop-color="#e8d5a0"/>
+                <stop offset="100%" stop-color="#c9b880"/>
+            </radialGradient>
+            <pattern id="mvg2" width="12" height="12" patternUnits="userSpaceOnUse">
+                <path d="M0,12 L12,0" stroke="#5a7a3a" stroke-width="0.6" opacity="0.3"/>
+            </pattern>
+            <radialGradient id="mvv2" cx="50%" cy="50%" r="70%">
+                <stop offset="60%"  stop-color="transparent"/>
+                <stop offset="100%" stop-color="rgba(30,15,0,0.5)"/>
+            </radialGradient>
+        </defs>
+        <rect width="900" height="650" fill="url(#mvp2)"/>
+    `;
+
+    // Granica królestwa
+    if (dataset.border && dataset.border.length >= 3) {
+        let bp = dataset.border.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + 'Z';
+        svg.appendChild(el('path', { d: bp, fill: 'url(#mvg2)' }));
+        svg.appendChild(el('path', { d: bp, fill: 'rgba(80,120,50,0.18)' }));
+        svg.appendChild(el('path', { d: bp, fill: 'none', stroke: '#4a2800', 'stroke-width': '2', 'stroke-linejoin': 'round', opacity: '0.5' }));
+    }
+
+    // Wypukła otoczka — trasa patrolowa
+    const hullPath = hullPoints.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + 'Z';
+    svg.appendChild(el('path', { d: hullPath, fill: 'rgba(245,158,11,0.1)', stroke: '#f59e0b', 'stroke-width': '2.5', 'stroke-dasharray': '10 5', 'stroke-linejoin': 'round' }));
+
+    // Strzałki trasy — numery odcinków
+    for (let i = 0; i < hullPoints.length; i++) {
+        const a = hullPoints[i], b = hullPoints[(i + 1) % hullPoints.length];
+        const mx = (a.x + b.x) / 2, my = (a.y + b.y) / 2;
+        svg.appendChild(el('circle', { cx: mx, cy: my, r: '10', fill: 'rgba(20,10,0,0.75)', stroke: '#f59e0b', 'stroke-width': '1' }));
+        svg.appendChild(el('text',   { x: mx, y: my + 4, 'text-anchor': 'middle', 'font-size': '9', fill: '#f59e0b', 'font-family': 'serif', 'font-weight': 'bold', 'pointer-events': 'none' }, i + 1));
+    }
+
+    // Zbiór wszystkich punktów (domki + kopalnie) — szare dla tych wewnątrz
+    const hullSet = new Set(hullPoints.map(p => p.id));
+
+    for (const h of dataset.houses) {
+        if (!h.x && !h.y) continue;
+        const onHull = hullSet.has(h.id) && hullPoints.some(p => p.type === 'house' && p.id === h.id);
+        const g = el('g', { transform: `translate(${h.x},${h.y})` });
+        g.innerHTML = `
+            <use href="#sym-house" style="--roof:${onHull ? '#7f1d1d' : '#3a0a00'};--wall:${onHull ? '#8b6914' : '#4a3000'}"/>
+            <rect x="-28" y="12" width="56" height="13" rx="3" fill="rgba(30,15,0,0.75)"/>
+            <text y="22" text-anchor="middle" font-size="9" fill="${onHull ? '#fde68a' : '#8a7050'}" font-family="serif" font-weight="bold" pointer-events="none">${h.name || `D${h.id}`}</text>
+        `;
+        svg.appendChild(g);
+    }
+
+    for (const m of dataset.mines) {
+        if (!m.x && !m.y) continue;
+        const color   = MINERAL_COLORS[m.mineral] || '#94a3b8';
+        const onHull  = hullPoints.some(p => p.type === 'mine' && p.id === m.id);
+        const g = el('g', { transform: `translate(${m.x},${m.y})`, style: `color:${color}${onHull ? '' : ';opacity:0.35'}` });
+        g.innerHTML = `
+            <use href="#sym-mine"/>
+            <rect x="-22" y="12" width="44" height="13" rx="3" fill="rgba(30,15,0,0.75)"/>
+            <text y="22" text-anchor="middle" font-size="9" fill="${onHull ? '#fde68a' : '#8a7050'}" font-family="serif" font-weight="bold" pointer-events="none">${m.mineral || '?'}</text>
+        `;
+        svg.appendChild(g);
+    }
+
+    // Numery wierzchołków otoczki
+    hullPoints.forEach((p, i) => {
+        svg.appendChild(el('circle', { cx: p.x, cy: p.y, r: '5', fill: '#f59e0b', stroke: '#fff8e1', 'stroke-width': '1.5' }));
+        svg.appendChild(el('text', { x: p.x + 8, y: p.y - 7, 'font-size': '9', fill: '#f59e0b', 'font-family': 'serif', 'font-weight': 'bold', 'pointer-events': 'none' }, `P${i + 1}`));
+    });
+
+    svg.appendChild(el('rect', { width: 900, height: 650, fill: 'url(#mvv2)', 'pointer-events': 'none' }));
+
+    // Legenda
+    const legY = 620;
+    svg.appendChild(el('rect', { x: 20, y: legY - 14, width: 300, height: 22, rx: 4, fill: 'rgba(20,10,0,0.7)' }));
+    svg.appendChild(el('line', { x1: 28, y1: legY, x2: 58, y2: legY, stroke: '#f59e0b', 'stroke-width': '2', 'stroke-dasharray': '6 3' }));
+    svg.appendChild(el('text', { x: 65, y: legY + 4, 'font-size': '10', fill: '#f59e0b', 'font-family': 'serif' }, 'Trasa patrolowa (wypukła otoczka)'));
+
+    section.classList.remove('hidden');
+}
+
+// ═══════════════════════════════════════════════════════════════
+// WIZUALIZACJA — BORDER DEFENSE SOLVER (Segment Tree)
+// ═══════════════════════════════════════════════════════════════
+
+function renderBorderDefenseViz(dataset, segments) {
+    document.getElementById('viz-section').classList.add('hidden');
+
+    const section = document.getElementById('map-viz-section');
+    if (!dataset || !segments || segments.length === 0 || !dataset.border || dataset.border.length < 3) {
+        section.classList.add('hidden');
+        return;
+    }
+
+    const svg = document.getElementById('map-viz-svg');
+    const NS  = 'http://www.w3.org/2000/svg';
+    function el(tag, attrs, text) {
+        const node = document.createElementNS(NS, tag);
+        for (const [k, v] of Object.entries(attrs)) node.setAttribute(k, v);
+        if (text !== undefined) node.textContent = text;
+        return node;
+    }
+
+    // Paleta segmentów
+    const SEGMENT_COLORS = ['#f59e0b', '#67e8f9', '#c2410c', '#94a3b8', '#84cc16', '#a78bfa', '#fb7185'];
+
+    svg.innerHTML = `
+        <defs>
+            <radialGradient id="mvp3" cx="50%" cy="50%" r="70%">
+                <stop offset="0%"   stop-color="#f5e6c0"/>
+                <stop offset="60%"  stop-color="#e8d5a0"/>
+                <stop offset="100%" stop-color="#c9b880"/>
+            </radialGradient>
+            <pattern id="mvg3" width="12" height="12" patternUnits="userSpaceOnUse">
+                <path d="M0,12 L12,0" stroke="#5a7a3a" stroke-width="0.6" opacity="0.3"/>
+            </pattern>
+            <radialGradient id="mvv3" cx="50%" cy="50%" r="70%">
+                <stop offset="60%"  stop-color="transparent"/>
+                <stop offset="100%" stop-color="rgba(30,15,0,0.5)"/>
+            </radialGradient>
+        </defs>
+        <rect width="900" height="650" fill="url(#mvp3)"/>
+    `;
+
+    const border = dataset.border;
+
+    // Tło terytorium
+    const bp = border.map((p, i) => `${i === 0 ? 'M' : 'L'}${p.x},${p.y}`).join(' ') + 'Z';
+    svg.appendChild(el('path', { d: bp, fill: 'url(#mvg3)' }));
+    svg.appendChild(el('path', { d: bp, fill: 'rgba(80,120,50,0.18)' }));
+
+    // Kolorowe segmenty granicy
+    for (let si = 0; si < segments.length; si++) {
+        const seg   = segments[si];
+        const color = SEGMENT_COLORS[si % SEGMENT_COLORS.length];
+
+        // Odcinek muru odpowiadający temu segmentowi
+        const vStart = seg.commander.borderIdx;
+        const segLen = Math.ceil(border.length / segments.length);
+        const verts  = [];
+        for (let k = 0; k < segLen + 1; k++) {
+            verts.push(border[(vStart + k) % border.length]);
+        }
+
+        // Gruba kolorowa linia segmentu
+        for (let k = 0; k < verts.length - 1; k++) {
+            const a = verts[k], b = verts[k + 1];
+            svg.appendChild(el('line', { x1: a.x, y1: a.y, x2: b.x, y2: b.y, stroke: color, 'stroke-width': '6', 'stroke-linecap': 'round', opacity: '0.7' }));
+        }
+
+        // Ikona dowódcy przy środku segmentu
+        if (verts.length >= 2) {
+            const mid = Math.floor(verts.length / 2);
+            const cx  = verts[mid].x, cy = verts[mid].y;
+
+            svg.appendChild(el('circle', { cx, cy, r: '16', fill: 'rgba(20,10,0,0.85)', stroke: color, 'stroke-width': '2' }));
+            svg.appendChild(el('text',   { x: cx, y: cy - 3, 'text-anchor': 'middle', 'font-size': '13', fill: color, 'font-family': 'serif', 'pointer-events': 'none' }, '📣'));
+            svg.appendChild(el('text',   { x: cx, y: cy + 12, 'text-anchor': 'middle', 'font-size': '7.5', fill: color, 'font-family': 'serif', 'font-weight': 'bold', 'pointer-events': 'none' }, seg.commander.name.slice(0, 6)));
+
+            // Tooltip — boks z informacją
+            const bx = Math.min(Math.max(cx - 55, 5), 790);
+            const by = Math.max(cy - 60, 5);
+            svg.appendChild(el('rect',  { x: bx, y: by, width: 110, height: 38, rx: 4, fill: 'rgba(20,10,0,0.82)', stroke: color, 'stroke-width': '1', 'pointer-events': 'none' }));
+            svg.appendChild(el('text',  { x: bx + 55, y: by + 14, 'text-anchor': 'middle', 'font-size': '9', fill: '#fde68a', 'font-family': 'serif', 'font-weight': 'bold', 'pointer-events': 'none' }, `Seg. ${si + 1}: ${seg.commander.name}`));
+            svg.appendChild(el('text',  { x: bx + 55, y: by + 28, 'text-anchor': 'middle', 'font-size': '8', fill: color, 'font-family': 'serif', 'pointer-events': 'none' }, `głośność: ${seg.commander.loudness} | ${seg.commander.houseName}`));
+        }
+    }
+
+    // Kontur granicy na wierzchu
+    svg.appendChild(el('path', { d: bp, fill: 'none', stroke: '#4a2800', 'stroke-width': '2.5', 'stroke-linejoin': 'round', opacity: '0.7' }));
+    svg.appendChild(el('path', { d: bp, fill: 'none', stroke: '#8b5e0a', 'stroke-width': '1',   'stroke-linejoin': 'round' }));
+
+    // Wierzchołki granicy
+    border.forEach((p, i) => {
+        svg.appendChild(el('circle', { cx: p.x, cy: p.y, r: '4', fill: '#8b5e0a', stroke: '#4a2800', 'stroke-width': '1' }));
+        if (i % 2 === 0) {
+            svg.appendChild(el('text', { x: p.x + 6, y: p.y - 5, 'font-size': '8', fill: '#c9a84c', 'font-family': 'serif', 'pointer-events': 'none' }, `W${i + 1}`));
+        }
+    });
+
+    // Domki i kopalnie
+    for (const h of dataset.houses) {
+        if (!h.x && !h.y) continue;
+        const g = el('g', { transform: `translate(${h.x},${h.y})` });
+        g.innerHTML = `
+            <use href="#sym-house"/>
+            <rect x="-28" y="12" width="56" height="13" rx="3" fill="rgba(30,15,0,0.75)"/>
+            <text y="22" text-anchor="middle" font-size="9" fill="#fde68a" font-family="serif" font-weight="bold" pointer-events="none">${h.name || `D${h.id}`}</text>
+        `;
+        svg.appendChild(g);
+    }
+    for (const m of dataset.mines) {
+        if (!m.x && !m.y) continue;
+        const color = MINERAL_COLORS[m.mineral] || '#94a3b8';
+        const g = el('g', { transform: `translate(${m.x},${m.y})`, style: `color:${color}` });
+        g.innerHTML = `
+            <use href="#sym-mine"/>
+            <rect x="-22" y="12" width="44" height="13" rx="3" fill="rgba(30,15,0,0.75)"/>
+            <text y="22" text-anchor="middle" font-size="9" fill="#fde68a" font-family="serif" font-weight="bold" pointer-events="none">${m.mineral || '?'}</text>
+        `;
+        svg.appendChild(g);
+    }
+
+    svg.appendChild(el('rect', { width: 900, height: 650, fill: 'url(#mvv3)', 'pointer-events': 'none' }));
+
+    // Legenda segmentów
+    const legX = 20, legY0 = 540;
+    svg.appendChild(el('rect', { x: legX - 5, y: legY0 - 18, width: 200, height: segments.length * 18 + 22, rx: 4, fill: 'rgba(20,10,0,0.78)' }));
+    svg.appendChild(el('text', { x: legX + 95, y: legY0 - 4, 'text-anchor': 'middle', 'font-size': '9', fill: '#c9a84c', 'font-family': 'Georgia,serif', 'letter-spacing': '1' }, 'DOWÓDCY SEGMENTÓW'));
+    for (let i = 0; i < segments.length; i++) {
+        const seg = segments[i], color = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+        const y = legY0 + 12 + i * 18;
+        svg.appendChild(el('rect',  { x: legX, y: y - 8, width: 14, height: 8, rx: 2, fill: color, opacity: '0.8' }));
+        svg.appendChild(el('text',  { x: legX + 20, y: y, 'font-size': '9', fill: '#e8d5a3', 'font-family': 'serif' }, `Seg. ${i + 1}: ${seg.commander.name} (🔊${seg.commander.loudness})`));
+    }
+
+    section.classList.remove('hidden');
+}
+
+
 
 function escHtml(str) {
     return String(str)
