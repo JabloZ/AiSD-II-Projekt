@@ -1147,6 +1147,258 @@ function escHtml(str) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// HUFFMAN — pobieranie skompresowanych logów i dekompresja
+// ═══════════════════════════════════════════════════════════════
+
+// ── Pobierz logi jako .huff (kompresja po stronie backendu) ────
+
+document.getElementById('btn-download-huff').addEventListener('click', async () => {
+    if (!lastLogs || lastLogs.length === 0) {
+        alert('Brak logów do skompresowania. Uruchom najpierw algorytm.');
+        return;
+    }
+
+    const btn = document.getElementById('btn-download-huff');
+    btn.disabled    = true;
+    btn.textContent = '⏳ Kompresowanie…';
+
+    try {
+        const response = await fetch(`${API_URL}/api/logs/compressed`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ logs: lastLogs.join('\n') }),
+        });
+
+        if (!response.ok) {
+            const err = await response.json().catch(() => ({ error: response.statusText }));
+            alert(`Błąd kompresji: ${err.error || response.statusText}`);
+            return;
+        }
+
+        const origBits  = response.headers.get('X-Huffman-Original-Bits');
+        const encBits   = response.headers.get('X-Huffman-Encoded-Bits');
+        const savedPct  = response.headers.get('X-Huffman-Saved-Percent');
+        const fileBytes = response.headers.get('X-Huffman-File-Bytes');
+
+        const blob = await response.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        const algo = ALGORITHMS.find(al => al.id === selectedAlgoId);
+        a.href     = url;
+        a.download = `${algo?.shortName ?? 'logi'}.huff`;
+        a.click();
+        URL.revokeObjectURL(url);
+
+        if (origBits && encBits && savedPct) {
+            showHuffToast({
+                originalBits: parseInt(origBits),
+                encodedBits:  parseInt(encBits),
+                savedPercent: parseFloat(savedPct),
+                fileBytes:    parseInt(fileBytes),
+            });
+        }
+    } catch (err) {
+        alert(`Błąd połączenia z backendem: ${err.message}`);
+    } finally {
+        btn.disabled    = false;
+        btn.textContent = '🗜 Pobierz .huff';
+    }
+});
+
+// ── Toast ze statystykami ───────────────────────────────────────
+
+function showHuffToast(stats) {
+    const existing = document.getElementById('huff-toast');
+    if (existing) existing.remove();
+
+    const saved = Math.max(0, stats.savedPercent).toFixed(1);
+    const toast = document.createElement('div');
+    toast.id = 'huff-toast';
+    toast.innerHTML = `
+        <div class="huff-toast-inner">
+            <span class="huff-toast-title">🗜 Huffman — statystyki kompresji</span>
+            <div class="huff-toast-row">
+                <span>Oryginał (bity)</span><strong>${stats.originalBits} b</strong>
+            </div>
+            <div class="huff-toast-row">
+                <span>Plik .huff</span><strong>${stats.fileBytes} B</strong>
+            </div>
+            <div class="huff-toast-row huff-toast-accent">
+                <span>Oszczędność bitów</span><strong>${saved}%</strong>
+            </div>
+            <button class="huff-toast-close" onclick="this.closest('#huff-toast').remove()">✕</button>
+        </div>
+    `;
+    document.body.appendChild(toast);
+    setTimeout(() => document.getElementById('huff-toast')?.remove(), 7000);
+}
+
+// ── Modal dekompresji ───────────────────────────────────────────
+
+document.getElementById('btn-decompress-huff').addEventListener('click', () => {
+    document.getElementById('modal-decompress').classList.remove('hidden');
+    resetDecompModal();
+});
+
+// Zamknięcie przez istniejący handler data-close-modal w app.js (już obsługiwany)
+// + klik poza modalem
+document.getElementById('modal-decompress').addEventListener('click', e => {
+    if (e.target === document.getElementById('modal-decompress'))
+        document.getElementById('modal-decompress').classList.add('hidden');
+});
+
+function resetDecompModal() {
+    document.getElementById('decomp-result').classList.add('hidden');
+    document.getElementById('decomp-error').classList.add('hidden');
+    document.getElementById('decomp-drop-label').textContent = 'Upuść plik .huff tutaj lub kliknij aby wybrać';
+    document.getElementById('decomp-file-input').value = '';
+}
+
+// Drag & Drop
+const _dz = document.getElementById('decomp-drop-zone');
+_dz.addEventListener('dragover',  e => { e.preventDefault(); _dz.classList.add('decomp-drag-over'); });
+_dz.addEventListener('dragleave', () => _dz.classList.remove('decomp-drag-over'));
+_dz.addEventListener('drop', e => {
+    e.preventDefault();
+    _dz.classList.remove('decomp-drag-over');
+    const f = e.dataTransfer.files[0];
+    if (f) handleHuffFile(f);
+});
+_dz.addEventListener('click', () => document.getElementById('decomp-file-input').click());
+document.getElementById('decomp-file-input').addEventListener('change', e => {
+    const f = e.target.files[0];
+    if (f) handleHuffFile(f);
+});
+
+// ── Parser .huff w JS (musi być zgodny bit-po-bicie z HuffmanSolver.cs) ──
+//
+// Format:
+//   [4B] magic "HUFF"
+//   [4B] symbolCount (int32 LE)
+//   [4B] originalLen (int32 LE)
+//   [4B] bitCount    (int32 LE)
+//   Dla każdego symbolu:
+//     [2B] char UTF-16 LE
+//     [4B] codeLen
+//     [NB] kod '0'/'1' ASCII
+//   [ceil(bitCount/8) B] bity MSB-first
+
+async function handleHuffFile(file) {
+    const label  = document.getElementById('decomp-drop-label');
+    const errEl  = document.getElementById('decomp-error');
+    const resEl  = document.getElementById('decomp-result');
+
+    label.textContent = `⏳ Wczytywanie: ${file.name}…`;
+    errEl.classList.add('hidden');
+    resEl.classList.add('hidden');
+
+    if (!file.name.endsWith('.huff')) {
+        showDecompError('Nieprawidłowy format — oczekiwano pliku .huff');
+        label.textContent = 'Upuść plik .huff tutaj lub kliknij aby wybrać';
+        return;
+    }
+
+    try {
+        const ab    = await file.arrayBuffer();
+        const dv    = new DataView(ab);
+        const bytes = new Uint8Array(ab);
+
+        // Magic
+        const magic = String.fromCharCode(bytes[0], bytes[1], bytes[2], bytes[3]);
+        if (magic !== 'HUFF') {
+            showDecompError('Nieprawidłowy plik — brakuje nagłówka HUFF.');
+            return;
+        }
+
+        let offset = 4;
+        const symbolCount = dv.getInt32(offset, true); offset += 4;
+        const originalLen = dv.getInt32(offset, true); offset += 4;
+        const bitCount    = dv.getInt32(offset, true); offset += 4;
+
+        // Tabela kodów
+        const codeTable = {};
+        for (let i = 0; i < symbolCount; i++) {
+            const charCode = dv.getInt16(offset, true); offset += 2;
+            const symbol   = String.fromCharCode(charCode);
+            const codeLen  = dv.getInt32(offset, true); offset += 4;
+            let   code     = '';
+            for (let j = 0; j < codeLen; j++) code += String.fromCharCode(bytes[offset++]);
+            codeTable[code] = symbol;
+        }
+
+        // Rozwiń bity
+        let bitString = '';
+        for (let i = 0; i < bitCount; i++) {
+            const b   = bytes[offset + Math.floor(i / 8)];
+            const bit = (b >> (7 - (i % 8))) & 1;
+            bitString += bit === 1 ? '1' : '0';
+        }
+
+        // Dekoduj
+        let decoded = '';
+        let current = '';
+        for (const bit of bitString) {
+            current += bit;
+            if (Object.prototype.hasOwnProperty.call(codeTable, current)) {
+                decoded += codeTable[current];
+                current  = '';
+            }
+        }
+
+        // Statystyki
+        const origBits = decoded.length * 8;
+        const encBits  = bitCount;
+        const savedPct = (100 - (encBits / origBits * 100)).toFixed(1);
+
+        label.textContent = `✔ ${file.name} (${file.size} B)`;
+        showDecompResult(decoded, {
+            fileSizeBytes: file.size,
+            originalChars: decoded.length,
+            originalBits:  origBits,
+            encodedBits:   encBits,
+            savedPercent:  savedPct,
+        });
+
+    } catch (err) {
+        showDecompError(`Błąd dekompresji: ${err.message}`);
+        label.textContent = 'Upuść plik .huff tutaj lub kliknij aby wybrać';
+    }
+}
+
+function showDecompError(msg) {
+    const el = document.getElementById('decomp-error');
+    el.textContent = msg;
+    el.classList.remove('hidden');
+    document.getElementById('decomp-result').classList.add('hidden');
+}
+
+function showDecompResult(text, stats) {
+    document.getElementById('decomp-result').classList.remove('hidden');
+    document.getElementById('decomp-stat-origbits').textContent  = `${stats.originalBits} b (${stats.originalChars} znaków)`;
+    document.getElementById('decomp-stat-encbits').textContent   = `${stats.encodedBits} b`;
+    document.getElementById('decomp-stat-saved').textContent     = `${Math.max(0, stats.savedPercent)}%`;
+    document.getElementById('decomp-stat-filesize').textContent  = `${stats.fileSizeBytes} B`;
+    document.getElementById('decomp-text-output').textContent    = text;
+
+    document.getElementById('btn-decomp-copy').onclick = () => {
+        navigator.clipboard.writeText(text).then(() => {
+            document.getElementById('btn-decomp-copy').textContent = '✔ Skopiowano!';
+            setTimeout(() => { document.getElementById('btn-decomp-copy').textContent = '⎘ Kopiuj logi'; }, 2000);
+        });
+    };
+
+    document.getElementById('btn-decomp-save-txt').onclick = () => {
+        const blob = new Blob([text], { type: 'text/plain;charset=utf-8' });
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = 'logi-odkompresowane.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+    };
+}
+
+// ═══════════════════════════════════════════════════════════════
 // INICJALIZACJA
 // ═══════════════════════════════════════════════════════════════
 
