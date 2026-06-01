@@ -263,9 +263,7 @@ Przy każdym połączeniu robimy parametryzację aby chronić się przed SQL inj
 ### Zbiory (PostgreSQL schemas)
 Aby rozwiązać problem różnych zbiorów danych bez tworzenia nowej bazy danych wykorzystaliśmy feature postgresa - czyli schematy.
 Fragment struktury plików kontenera db:
-- 01-init.sql
-- 02-dataset1.sql
-- 03-dataset2.sql    
+- 01-init.sql 
 
 **init.sql** zawiera tworzenie schematów, a datasety zawierają samo tworzenie danych i ich insertowanie.
 **Uwaga techniczna:** Przy zmianie zawartości plików **.sql** zaleca się
