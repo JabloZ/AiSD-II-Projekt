@@ -1,0 +1,365 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Królestwo Krasnoludków</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@400;600;700&family=Crimson+Pro:ital,wght@0,300;0,400;0,600;1,400&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ═══════════════════════ VIEW: MENU ═══════════════════════ -->
+<div id="view-menu" class="view active">
+
+    <header class="app-header">
+        <div class="header-brand">
+            <span class="header-icon">⛏</span>
+            <div>
+                <h1 class="header-title">Królestwo Krasnoludków</h1>
+                <p class="header-subtitle">System przydziału pracy</p>
+            </div>
+        </div>
+    </header>
+
+    <main class="menu-layout">
+
+        <section class="panel">
+            <div class="panel-row">
+                <h2 class="panel-heading">Zbiory danych</h2>
+                <button id="btn-new-dataset" class="btn-sm btn-primary-sm">+ Nowy</button>
+            </div>
+            <div id="dataset-list" class="dataset-list"></div>
+        </section>
+
+        <section class="panel">
+            <h2 class="panel-heading">Wybór algorytmu</h2>
+            <div id="algo-list" class="algo-list"></div>
+        </section>
+
+        <section class="panel">
+            <div class="panel-row">
+                <h2 class="panel-heading">Dane z krolewstwa (bazy)</h2>
+                <button id="btn-edit-data" class="btn-sm btn-primary-sm">✎ Edytuj dane</button>
+            </div>
+            <div id="db-stats"></div>
+        </section>
+
+    </main>
+
+    <footer class="menu-footer">
+        <button id="btn-decompress-huff" class="btn-decompress-menu">🔓 Dekompresuj .huff</button>
+        <div class="selection-summary">
+            <span id="summary-dataset" class="summary-item">Zbiór: <em>zbior1</em></span>
+            <span id="summary-algo" class="summary-item">Algorytm: <em>nie wybrano</em></span>
+        </div>
+        <button id="btn-run" class="btn-run" disabled>Uruchom algorytm →</button>
+    </footer>
+
+</div>
+
+
+<!-- ════════════════════════ VIEW: RUNNER ════════════════════════ -->
+<div id="view-runner" class="view">
+
+    <header class="runner-header">
+        <button id="btn-back" class="btn-back">← Wróć</button>
+        <div class="runner-header-center">
+            <span id="runner-algo-name" class="runner-algo-badge"></span>
+        </div>
+        <div class="runner-header-right">
+            <button id="btn-about" class="btn-sm btn-outline-sm">? O algorytmie</button>
+            <button id="btn-execute" class="btn-execute">▶ Uruchom</button>
+        </div>
+    </header>
+
+    <div class="runner-body">
+
+        <div class="log-section">
+            <div class="log-bar">
+                <span class="log-label">Logi wynikowe</span>
+                <span id="log-status" class="log-status"></span>
+            </div>
+            <div id="log-output" class="log-output">
+                <p class="log-placeholder">Naciśnij "▶ Uruchom" aby rozpocząć obliczenia...</p>
+            </div>
+        </div>
+
+        <div id="log-actions" class="log-actions hidden">
+            <button id="btn-download-logs" class="btn-download">↓ Pobierz logi (.txt)</button>
+            <button id="btn-download-huff" class="btn-download btn-download-huff">🗜 Pobierz .huff</button>
+        </div>
+
+        <div id="viz-section" class="viz-section hidden">
+            <div class="viz-bar">
+                <span class="viz-label">Graf przydziałów</span>
+            </div>
+            <div class="viz-container">
+                <svg id="viz-svg" width="100%" height="260"></svg>
+            </div>
+        </div>
+
+        <div id="map-viz-section" class="viz-section hidden" style="margin-top:12px">
+            <div class="viz-bar">
+                <span class="viz-label">Mapa królestwa</span>
+            </div>
+            <div class="map-viz-container">
+                <svg id="map-viz-svg" viewBox="0 0 900 650" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;max-height:480px;border-radius:6px"></svg>
+            </div>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ════════════════════════ VIEW: EDITOR ════════════════════════ -->
+<div id="view-editor" class="view">
+    <div class="editor-shell">
+
+        <!-- ── Sidebar ───────────────────────────────────────────── -->
+        <aside class="map-sidebar">
+
+            <!-- Nav buttons -->
+            <div class="map-sidebar-nav">
+                <button id="btn-editor-cancel" class="btn-back" style="flex:1">← Anuluj</button>
+                <button id="btn-editor-save" class="btn-run" style="flex:1;padding:8px 10px;font-size:0.8rem">Zapisz zestaw →</button>
+            </div>
+
+            <!-- Dataset name -->
+            <div class="map-sidebar-section">
+                <span class="map-section-label">Nazwa zestawu</span>
+                <input id="editor-dataset-name" type="text" class="form-input" placeholder="np. Duże miasto" style="margin-top:6px;width:100%" />
+            </div>
+
+            <!-- Border section -->
+            <div class="map-sidebar-section">
+                <span class="map-section-label">Granica</span>
+                <div style="display:flex;gap:6px;margin-top:8px">
+                    <button id="btn-randomize"   class="btn-sm btn-primary-sm" style="flex:1">Losuj</button>
+                    <button id="btn-add-vertex"  class="btn-sm btn-outline-sm" style="flex:1">Dodaj wierzchołek</button>
+                </div>
+            </div>
+
+            <!-- Elements section -->
+            <div class="map-sidebar-section">
+                <span class="map-section-label">Elementy</span>
+                <div style="display:flex;gap:6px;margin-top:8px">
+                    <button id="btn-add-house" class="btn-sm btn-primary-sm" style="flex:1">+ Domek</button>
+                    <button id="btn-add-mine"  class="btn-sm btn-primary-sm" style="flex:1">+ Kopalnia</button>
+                </div>
+            </div>
+
+            <!-- House properties -->
+            <div id="house-props" class="map-sidebar-section hidden">
+                <div class="prop-box">
+                    <div class="dwarf-list-header">
+                        <span class="prop-label">Krasnoludki</span>
+                        <button id="btn-add-dwarf" class="btn-sm btn-primary-sm">+ Dodaj</button>
+                    </div>
+                    <div id="house-dwarf-list"></div>
+                </div>
+            </div>
+
+            <!-- Mine properties -->
+            <div id="mine-props" class="map-sidebar-section hidden">
+                <div class="prop-box">
+                    <div class="mine-mineral-header">
+                        <span id="mine-mineral-dot" class="mineral-dot"></span>
+                        <span id="mine-mineral-name" class="prop-label"></span>
+                    </div>
+                    <select id="mine-mineral-select" class="mineral-select"></select>
+                    <span class="prop-label" style="margin-top:10px">Pojemność</span>
+                    <div class="counter-row">
+                        <button id="mine-cap-dec" class="counter-btn">−</button>
+                        <span id="mine-cap-value" class="counter-value">1</span>
+                        <button id="mine-cap-inc" class="counter-btn">+</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Delete button -->
+            <div class="map-sidebar-section">
+                <button id="btn-delete" class="btn-sm hidden" style="width:100%;background:rgba(127,29,29,0.3);border-color:#b91c1c;color:#fca5a5">✕ Usuń zaznaczony</button>
+            </div>
+
+            <!-- Stats -->
+            <div class="map-sidebar-section map-stats">
+                <span class="map-section-label">Statystyki</span>
+                <div class="stats-grid">
+                    <span class="stat-label">Wierzchołki</span><span id="stat-vertices" class="stat-value">0</span>
+                    <span class="stat-label">Domki</span><span id="stat-houses"   class="stat-value">0</span>
+                    <span class="stat-label">Kopalnie</span><span id="stat-mines"    class="stat-value">0</span>
+                    <span class="stat-label">Krasnoludki</span><span id="stat-dwarfs"   class="stat-value">0</span>
+                </div>
+            </div>
+
+        </aside>
+
+        <!-- ── Canvas ─────────────────────────────────────────────── -->
+        <div class="editor-canvas-area">
+            <svg id="map" viewBox="0 0 900 650" width="900" height="650">
+                <defs>
+                    <radialGradient id="parchment" cx="50%" cy="50%" r="70%">
+                        <stop offset="0%"   stop-color="#f5e6c0"/>
+                        <stop offset="60%"  stop-color="#e8d5a0"/>
+                        <stop offset="100%" stop-color="#c9b880"/>
+                    </radialGradient>
+                    <pattern id="mapgrid" width="50" height="50" patternUnits="userSpaceOnUse">
+                        <path d="M 50 0 L 0 0 0 50" fill="none" stroke="#b8a060" stroke-width="0.4" opacity="0.5"/>
+                    </pattern>
+                    <pattern id="hatch" width="8" height="8" patternUnits="userSpaceOnUse">
+                        <path d="M0,8 L8,0" stroke="#a08040" stroke-width="0.3" opacity="0.25"/>
+                    </pattern>
+                    <radialGradient id="vignette" cx="50%" cy="50%" r="70%">
+                        <stop offset="60%"  stop-color="transparent"/>
+                        <stop offset="100%" stop-color="rgba(30,15,0,0.55)"/>
+                    </radialGradient>
+                    <filter id="shadow" x="-30%" y="-30%" width="160%" height="160%">
+                        <feDropShadow dx="2" dy="3" stdDeviation="4" flood-color="#3a2000" flood-opacity="0.6"/>
+                    </filter>
+                    <filter id="glow">
+                        <feGaussianBlur stdDeviation="3" result="blur"/>
+                        <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+                    </filter>
+                    <pattern id="grasshatch" width="12" height="12" patternUnits="userSpaceOnUse">
+                        <path d="M0,12 L12,0" stroke="#5a7a3a" stroke-width="0.6" opacity="0.3"/>
+                    </pattern>
+                </defs>
+
+                <!-- Static background -->
+                <rect width="900" height="650" fill="url(#parchment)"/>
+                <rect width="900" height="650" fill="url(#hatch)"/>
+                <rect width="900" height="650" fill="url(#mapgrid)"/>
+                <rect x="8" y="8" width="884" height="634" fill="none" stroke="#8a6030" stroke-width="2" rx="2" opacity="0.6"/>
+                <rect x="12" y="12" width="876" height="626" fill="none" stroke="#8a6030" stroke-width="0.8" rx="1" opacity="0.4"/>
+
+                <!-- Dynamic layers -->
+                <g id="layer-territory"></g>
+                <g id="layer-border-lines"></g>
+                <g id="layer-mid-handles"></g>
+                <g id="layer-assignments"></g>
+                <g id="layer-houses"></g>
+                <g id="layer-mines"></g>
+                <g id="layer-vertices"></g>
+                <g id="layer-vertex-label"></g>
+
+                <!-- Vignette always on top -->
+                <rect width="900" height="650" fill="url(#vignette)" pointer-events="none"/>
+            </svg>
+        </div>
+
+    </div>
+</div>
+
+
+<!-- ════════════════════════ MODAL: O ALGORYTMIE ════════════════════════ -->
+<div id="modal-about" class="modal-overlay hidden">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 id="modal-algo-name" class="modal-title"></h2>
+            <button class="modal-close" data-close-modal="modal-about">✕</button>
+        </div>
+        <div class="modal-body">
+            <p id="modal-algo-desc" class="modal-desc"></p>
+            <h3 class="modal-section-title">Jak działa?</h3>
+            <ol id="modal-algo-steps" class="modal-steps"></ol>
+            <div class="complexity-grid">
+                <div class="complexity-box">
+                    <span class="complexity-label">Złożoność czasowa</span>
+                    <code id="modal-time-complexity" class="complexity-value"></code>
+                </div>
+                <div class="complexity-box">
+                    <span class="complexity-label">Złożoność pamięciowa</span>
+                    <code id="modal-space-complexity" class="complexity-value"></code>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════ SVG SPRITES — ikony domku i kopalni ════ -->
+<svg aria-hidden="true" style="position:absolute;width:0;height:0;overflow:hidden">
+    <defs>
+        <!-- Domek: --roof i --wall to CSS variables dla kolorów -->
+        <symbol id="sym-house" overflow="visible">
+            <polygon points="0,-22 -15,-8 15,-8" fill="var(--roof,#5c1a0a)" stroke="#3b0a00" stroke-width="1.5"/>
+            <rect x="-13" y="-8" width="26" height="16" fill="var(--wall,#8b6914)" stroke="#4a3000" stroke-width="1.5" rx="1"/>
+            <rect x="-4" y="-1" width="8" height="9" fill="#2c1a00" rx="1"/>
+            <rect x="5" y="-5" width="5" height="5" fill="#fde68a" opacity="0.8" rx="0.5"/>
+        </symbol>
+        <!-- Kopalnia: kolor kryształu = currentColor (ustawiany przez color CSS) -->
+        <symbol id="sym-mine" overflow="visible">
+            <path d="M-13,-4 Q0,-18 13,-4" fill="#2c1a00" stroke="#4a3000" stroke-width="1.5"/>
+            <rect x="-13" y="-4" width="26" height="14" fill="#1c1412" stroke="#4a3000" stroke-width="1.5" rx="2"/>
+            <line x1="-7" y1="-10" x2="7" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+            <line x1="7" y1="-10" x2="-7" y2="10" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+            <circle r="3.5" fill="currentColor" opacity="0.95"/>
+        </symbol>
+    </defs>
+</svg>
+
+<!-- ════════════════ MODAL: DEKOMPRESJA .huff ════════════════ -->
+<div id="modal-decompress" class="modal-overlay hidden">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2 class="modal-title">🔓 Dekompresja pliku .huff</h2>
+            <button class="modal-close" data-close-modal="modal-decompress">✕</button>
+        </div>
+        <div class="modal-body">
+
+            <p class="modal-desc">
+                Wrzuć plik <code style="color:var(--green);background:rgba(74,222,128,0.1);padding:1px 5px;border-radius:3px">.huff</code>
+                pobrany z tej aplikacji. Algorytm Huffmana odczyta nagłówek z drzewem kodów
+                i odkompresuje logi do oryginalnego tekstu.
+            </p>
+
+            <!-- Strefa drag & drop -->
+            <div id="decomp-drop-zone" class="decomp-drop-zone" tabindex="0" role="button">
+                <div class="decomp-drop-icon">📂</div>
+                <span id="decomp-drop-label">Upuść plik .huff tutaj lub kliknij aby wybrać</span>
+                <input id="decomp-file-input" type="file" accept=".huff" style="display:none">
+            </div>
+
+            <!-- Błąd -->
+            <p id="decomp-error" class="decomp-error hidden"></p>
+
+            <!-- Wynik -->
+            <div id="decomp-result" class="hidden">
+                <div class="decomp-stats-grid">
+                    <div class="decomp-stat-card">
+                        <span class="decomp-stat-label">Oryginał</span>
+                        <span id="decomp-stat-origbits" class="decomp-stat-value">—</span>
+                    </div>
+                    <div class="decomp-stat-card">
+                        <span class="decomp-stat-label">Zakodowane bity</span>
+                        <span id="decomp-stat-encbits" class="decomp-stat-value">—</span>
+                    </div>
+                    <div class="decomp-stat-card decomp-stat-accent">
+                        <span class="decomp-stat-label">Oszczędność</span>
+                        <span id="decomp-stat-saved" class="decomp-stat-value">—</span>
+                    </div>
+                    <div class="decomp-stat-card">
+                        <span class="decomp-stat-label">Plik .huff</span>
+                        <span id="decomp-stat-filesize" class="decomp-stat-value">—</span>
+                    </div>
+                </div>
+
+                <div class="decomp-text-wrap">
+                    <pre id="decomp-text-output" class="decomp-text-output"></pre>
+                </div>
+
+                <div class="decomp-actions">
+                    <button id="btn-decomp-copy" class="btn-download">⎘ Kopiuj logi</button>
+                    <button id="btn-decomp-save-txt" class="btn-download">↓ Zapisz jako .txt</button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+
+<script type="module" src="app.js"></script>
+</body>
+</html>

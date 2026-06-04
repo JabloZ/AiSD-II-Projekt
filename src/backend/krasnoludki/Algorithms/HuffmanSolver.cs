@@ -1,6 +1,8 @@
 using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Text;
 
 namespace krasnoludki.Algorithms
 {
@@ -21,7 +23,6 @@ namespace krasnoludki.Algorithms
         // 1. Budowa drzewa i słownika na podstawie tekstu
         public void BuildTree(string text)
         {
-            // Liczymy częstotliwość występowania każdego znaku
             var frequencies = new Dictionary<char, int>();
             foreach (char c in text)
             {
@@ -29,17 +30,12 @@ namespace krasnoludki.Algorithms
                 frequencies[c]++;
             }
 
-            // Tworzymy początkową listę węzłów
             var nodes = frequencies.Select(kvp => new HuffmanNode { Symbol = kvp.Key, Frequency = kvp.Value }).ToList();
 
             // Zabezpieczenie dla 1 unikalnego znaku
             if (nodes.Count == 1)
-            {
-                nodes.Add(new HuffmanNode { Symbol = '\0', Frequency = 0 }); // Dodajemy sztuczny węzeł
-            }
+                nodes.Add(new HuffmanNode { Symbol = '\0', Frequency = 0 });
 
-
-            // Budujemy drzewo łącząc węzły o najmniejszej częstotliwości
             while (nodes.Count > 1)
             {
                 nodes = nodes.OrderBy(n => n.Frequency).ToList();
@@ -49,7 +45,7 @@ namespace krasnoludki.Algorithms
 
                 var parent = new HuffmanNode
                 {
-                    Symbol = '*', // Znak pomocniczy dla węzłów wewnętrznych
+                    Symbol = '*',
                     Frequency = left.Frequency + right.Frequency,
                     Left = left,
                     Right = right
@@ -62,12 +58,9 @@ namespace krasnoludki.Algorithms
 
             root = nodes.FirstOrDefault();
             huffmanDictionary.Clear();
-            
-            // Generujemy ścieżki (0 dla lewo, 1 dla prawo)
+
             if (root != null)
-            {
                 GenerateDictionary(root, "");
-            }
         }
 
         private void GenerateDictionary(HuffmanNode node, string currentCode)
@@ -86,7 +79,6 @@ namespace krasnoludki.Algorithms
         public string Encode(string text)
         {
             if (root == null) throw new Exception("Drzewo nie zostało zbudowane! Uruchom BuildTree.");
-            
             return string.Join("", text.Select(c => huffmanDictionary[c]));
         }
 
@@ -95,28 +87,132 @@ namespace krasnoludki.Algorithms
         {
             if (root == null) throw new Exception("Drzewo nie zostało zbudowane!");
 
-            var decodedResult = "";
+            var decodedResult = new StringBuilder();
             var currentNode = root;
 
             foreach (char bit in encodedText)
             {
                 currentNode = (bit == '0') ? currentNode.Left : currentNode.Right;
 
-                // Jeśli doszliśmy do liścia, dodajemy znak do wyniku i wracamy na szczyt drzewa
                 if (currentNode!.Left == null && currentNode.Right == null)
                 {
-                    decodedResult += currentNode.Symbol;
+                    decodedResult.Append(currentNode.Symbol);
                     currentNode = root;
                 }
             }
 
-            return decodedResult;
+            return decodedResult.ToString();
         }
 
-        // Metoda pomocnicza do podglądu, jak algorytm oszczędza miejsce
+        // 4. Serializacja do binarnego formatu .huff
+        //
+        // Format pliku:
+        //   [4B]  magic "HUFF"
+        //   [4B]  liczba unikalnych symboli (int32 LE)
+        //   [4B]  długość oryginalnego tekstu (int32 LE)
+        //   [4B]  liczba zakodowanych bitów (int32 LE)
+        //   Dla każdego symbolu:
+        //     [2B] char UTF-16 LE
+        //     [4B] długość kodu binarnego
+        //     [NB] kod binarny jako ASCII '0'/'1'
+        //   Na końcu:
+        //     [ceil(bits/8) B] bity spakowane MSB-first
+        public byte[] SerializeToHuff(string originalText)
+        {
+            if (root == null) throw new InvalidOperationException("Drzewo nie zostało zbudowane!");
+
+            string bitString = Encode(originalText);
+
+            using var ms = new MemoryStream();
+            using var bw = new BinaryWriter(ms, Encoding.UTF8, leaveOpen: true);
+
+            // Magic
+            bw.Write(new byte[] { (byte)'H', (byte)'U', (byte)'F', (byte)'F' });
+
+            // Nagłówek
+            bw.Write((int)huffmanDictionary.Count);
+            bw.Write((int)originalText.Length);
+            bw.Write((int)bitString.Length);
+
+            // Tabela kodów
+            foreach (var kvp in huffmanDictionary)
+            {
+                bw.Write((short)kvp.Key);
+                bw.Write((int)kvp.Value.Length);
+                bw.Write(Encoding.ASCII.GetBytes(kvp.Value));
+            }
+
+            // Spakuj bity do bajtów (MSB first)
+            int byteCount = (bitString.Length + 7) / 8;
+            byte[] packed = new byte[byteCount];
+            for (int i = 0; i < bitString.Length; i++)
+            {
+                if (bitString[i] == '1')
+                    packed[i / 8] |= (byte)(1 << (7 - (i % 8)));
+            }
+
+            bw.Write(packed);
+            bw.Flush();
+
+            return ms.ToArray();
+        }
+
+        // 5. Deserializacja z .huff → oryginalny tekst (metoda statyczna)
+        public static string DeserializeFromHuff(byte[] data)
+        {
+            using var ms = new MemoryStream(data);
+            using var br = new BinaryReader(ms, Encoding.UTF8, leaveOpen: true);
+
+            // Sprawdź magic "HUFF"
+            var magic = br.ReadBytes(4);
+            if (magic[0] != 'H' || magic[1] != 'U' || magic[2] != 'F' || magic[3] != 'F')
+                throw new InvalidDataException("Nieprawidłowy format pliku — brakuje nagłówka HUFF.");
+
+            int symbolCount = br.ReadInt32();
+            int originalLen = br.ReadInt32();
+            int bitCount    = br.ReadInt32();
+
+            // Odczytaj tabelę kodów
+            var codeTable = new Dictionary<string, char>();
+            for (int i = 0; i < symbolCount; i++)
+            {
+                char   symbol  = (char)br.ReadInt16();
+                int    codeLen = br.ReadInt32();
+                string code    = Encoding.ASCII.GetString(br.ReadBytes(codeLen));
+                codeTable[code] = symbol;
+            }
+
+            // Rozwiń spakowane bajty do stringa bitów
+            int    byteCount = (bitCount + 7) / 8;
+            byte[] packed    = br.ReadBytes(byteCount);
+
+            var bitSb = new StringBuilder(bitCount);
+            for (int i = 0; i < bitCount; i++)
+            {
+                int b   = packed[i / 8];
+                int bit = (b >> (7 - (i % 8))) & 1;
+                bitSb.Append(bit == 1 ? '1' : '0');
+            }
+
+            // Dekoduj przez tabelę kodów
+            var    result  = new StringBuilder(originalLen);
+            string current = "";
+            foreach (char bit in bitSb.ToString())
+            {
+                current += bit;
+                if (codeTable.TryGetValue(current, out char sym))
+                {
+                    result.Append(sym);
+                    current = "";
+                }
+            }
+
+            return result.ToString();
+        }
+
+        // 6. Statystyki
         public void PrintStatistics(string originalText, string encodedText)
         {
-            // Zwykły znak to 8 bitów (ASCII)
             int originalBits = originalText.Length * 8;
             int encodedBits = encodedText.Length;
             double savedPercentage = 100.0 - ((double)encodedBits / originalBits * 100);
@@ -126,5 +222,7 @@ namespace krasnoludki.Algorithms
             Console.WriteLine($"- Rozmiar skompresowany: {encodedBits} bitów");
             Console.WriteLine($"- Zaoszczędzone miejsce: {savedPercentage:F2}%");
         }
+
+        public Dictionary<char, string> GetDictionary() => new Dictionary<char, string>(huffmanDictionary);
     }
 }
