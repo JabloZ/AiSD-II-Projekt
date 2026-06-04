@@ -52,5 +52,23 @@ namespace krasnoludki.Tests
             Assert.True(results.ContainsKey("hers"));
             Assert.False(results.ContainsKey("his"));
         }
+
+        [Fact]
+        public void Search_WhenDifferentCase_FindsMatchesCaseInsensitively()
+        {
+            // test sprawdzający odporność na wielkość liter (Case Insensitivity)
+            var service = new LogAnalyzerSolver();
+            service.BuildAutomaton(new List<string> { "Szmugiel", "rEnEtA" }); // Pomieszana wielkość w hasłach
+
+            // Pomieszana wielkość liter w przeszukiwanym tekście
+            string text = "Nocny sZmuGieL owoców, pyszna reneta oraz kolejny SZMUGIEL.";
+            var results = service.Search(text);
+
+            Assert.True(results.ContainsKey("Szmugiel"));
+            Assert.Equal(2, results["Szmugiel"].Count); 
+            
+            Assert.True(results.ContainsKey("rEnEtA"));
+            Assert.Equal(1, results["rEnEtA"].Count);
+        }
     }
 }

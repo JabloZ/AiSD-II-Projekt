@@ -1557,3 +1557,98 @@ body {
     display: flex;
     gap: 10px;
 }
+
+/* ═══════════════════════════════════════════════
+   SCANNER (AHO-CORASICK)
+═══════════════════════════════════════════════ */
+
+/* Przycisk w stopce (niebieskawy odcień dla odróżnienia) */
+.btn-scan-menu {
+    padding: 9px 18px;
+    background: rgba(42, 63, 84, 0.4);
+    color: #93c5fd;
+    border: 1px solid #3b5998;
+    border-radius: var(--radius);
+    font-size: 0.8rem;
+    font-family: inherit;
+    cursor: pointer;
+    letter-spacing: 0.03em;
+    transition: background 0.2s, border-color 0.2s, color 0.2s, box-shadow 0.2s;
+    flex-shrink: 0;
+    margin-left: 10px;
+}
+
+.btn-scan-menu:hover {
+    background: rgba(42, 63, 84, 0.8);
+    border-color: #60a5fa;
+    color: #bfdbfe;
+    box-shadow: 0 2px 10px rgba(59, 89, 152, 0.3);
+}
+
+/* Układ modala Skanera */
+.scan-input-group {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.scan-textarea {
+    height: 150px;
+    background: var(--bg-card-2);
+    color: var(--text-dim);
+    border: 1px solid var(--border-mid);
+    padding: 10px 14px;
+    width: 100%;
+    border-radius: var(--radius-sm);
+    font-family: 'Courier New', monospace;
+    font-size: 0.8rem;
+    resize: vertical;
+    transition: border-color 0.2s;
+}
+
+.scan-textarea:focus {
+    outline: none;
+    border-color: var(--gold-soft);
+}
+
+.scan-actions {
+    margin-top: 15px;
+}
+
+.scan-actions .btn-run {
+    width: 100%;
+}
+
+/* Wyniki Skanowania */
+.scan-result-box {
+    margin-top: 15px;
+    padding: 15px;
+    background: rgba(0, 0, 0, 0.4);
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--border-soft);
+}
+
+.scan-result-box h3 {
+    margin-top: 0;
+    margin-bottom: 10px;
+    color: var(--gold-dim);
+    font-family: 'Cinzel', serif;
+    font-size: 0.9rem;
+}
+
+.scan-result-box p {
+    margin: 6px 0;
+    font-size: 0.85rem;
+    color: var(--text-dim);
+}
+
+.scan-result-box .highlight {
+    color: #f87171;
+    font-weight: bold;
+}
+
+.scan-result-box .success {
+    color: var(--green);
+    font-weight: bold;
+    margin: 6px 0;
+}

@@ -89,6 +89,28 @@ public static class LogsEndpoints
                 return Results.Problem(ex.Message);
             }
         }).DisableAntiforgery();
+
+        // POST /api/logs/scan
+        // Body: { "text": "logi...", "patterns": ["haslo1", "haslo2"] }
+        // Zwraca: Słownik wyników np. { "haslo1": [12, 54] }
+        app.MapPost("/api/logs/scan", (ScanLogsDto req) =>
+        {
+            if (string.IsNullOrWhiteSpace(req.Text) || req.Patterns == null || req.Patterns.Count == 0)
+                return Results.BadRequest(new { error = "Tekst logów i lista haseł nie mogą być puste." });
+
+            try
+            {
+                var solver = new LogAnalyzerSolver();
+                solver.BuildAutomaton(req.Patterns);
+                
+                var results = solver.Search(req.Text);
+                return Results.Ok(results);
+            }
+            catch (Exception ex)
+            {
+                return Results.Problem(ex.Message);
+            }
+        });
     }
 }
 
