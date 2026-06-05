@@ -23,8 +23,11 @@ namespace krasnoludki.Algorithms
             foreach (var pattern in patterns)
             {
                 var current = root;
-                foreach (char c in pattern)
+                foreach (char originalChar in pattern)
                 {
+                    // Zamieniamy znak wzorca na małą literę, żeby graf był case-insensitive
+                    char c = char.ToLowerInvariant(originalChar);
+
                     if (!current.Children.ContainsKey(c))
                         current.Children[c] = new AhoCorasickNode();
                     current = current.Children[c];
@@ -80,7 +83,8 @@ namespace krasnoludki.Algorithms
 
             for (int i = 0; i < text.Length; i++)
             {
-                char c = text[i];
+                // Czytając logi, na bieżąco zmieniamy znak na małą literę do poruszania się po grafie
+                char c = char.ToLowerInvariant(text[i]);
                 
                 // Cofamy się po Fail linkach dopóki nie znajdziemy pasującej ścieżki
                 while (current != null && !current.Children.ContainsKey(c))

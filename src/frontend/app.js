@@ -1399,6 +1399,78 @@ function showDecompResult(text, stats) {
 }
 
 // ═══════════════════════════════════════════════════════════════
+// SKANER LOGÓW (Aho-Corasick)
+// ═══════════════════════════════════════════════════════════════
+
+// Otwieranie modala
+const btnScanOpen = document.getElementById('btn-scan-logs');
+const modalScan = document.getElementById('modal-scan');
+if (btnScanOpen && modalScan) {
+    btnScanOpen.addEventListener('click', () => {
+        modalScan.classList.remove('hidden');
+    });
+}
+
+// Zamykanie modala jest już globalnie obsługiwane przez [data-close-modal] na początku app.js!
+
+// Właściwy strzał do API
+const btnRunScan = document.getElementById('btn-run-scan');
+if (btnRunScan) {
+    btnRunScan.addEventListener('click', async () => {
+        const textToScan = document.getElementById('scan-text').value;
+        const rawPatterns = document.getElementById('scan-patterns').value;
+        
+        // Czyszczenie haseł z przecinków i spacji do ładnej tablicy
+        const patternsArray = rawPatterns.split(',').map(p => p.trim()).filter(p => p.length > 0);
+
+        if (!textToScan || patternsArray.length === 0) {
+            alert('Uzupełnij tekst logów oraz przynajmniej jedno hasło!');
+            return;
+        }
+
+        btnRunScan.textContent = '⏳ Skanowanie...';
+        btnRunScan.disabled = true;
+
+        try {
+            // Używamy globalnej zmiennej API_URL z Twojego app.js!
+            const response = await fetch(`${API_URL}/api/logs/scan`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ Text: textToScan, Patterns: patternsArray })
+            });
+
+            if (!response.ok) throw new Error("Błąd podczas skanowania na serwerze");
+
+            const results = await response.json();
+            
+            // Renderowanie wyników (z użyciem czystych klas CSS)
+            const resultDiv = document.getElementById('scan-result');
+            resultDiv.innerHTML = '<h3>Wyniki:</h3>';
+            
+            let foundAnything = false;
+            for (const [word, indexes] of Object.entries(results)) {
+                if (indexes.length > 0) {
+                    foundAnything = true;
+                    resultDiv.innerHTML += `<p>🚨 Słowo <span class="highlight">${word}</span> wystąpiło <b>${indexes.length}</b> raz(y) (na pozycjach: ${indexes.join(', ')}).</p>`;
+                }
+            }
+
+            if (!foundAnything) {
+                resultDiv.innerHTML += `<p class="success">✅ Czysto! Nie znaleziono żadnego z zakazanych haseł.</p>`;
+            }
+
+            resultDiv.classList.remove('hidden');
+        } catch (err) {
+            console.error(err);
+            alert("Błąd połączenia z API. Zobacz logi konsoli.");
+        } finally {
+            btnRunScan.textContent = '▶ Skanuj Logi';
+            btnRunScan.disabled = false;
+        }
+    });
+}
+
+// ═══════════════════════════════════════════════════════════════
 // INICJALIZACJA
 // ═══════════════════════════════════════════════════════════════
 

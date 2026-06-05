@@ -51,6 +51,7 @@
 
     <footer class="menu-footer">
         <button id="btn-decompress-huff" class="btn-decompress-menu">🔓 Dekompresuj .huff</button>
+        <button id="btn-scan-logs" class="btn-decompress-menu">🔍 Skanuj Archiwa</button>
         <div class="selection-summary">
             <span id="summary-dataset" class="summary-item">Zbiór: <em>zbior1</em></span>
             <span id="summary-algo" class="summary-item">Algorytm: <em>nie wybrano</em></span>
@@ -359,6 +360,30 @@
         </div>
     </div>
 </div>
+<div id="modal-scan" class="modal-overlay hidden">
+    <div class="modal modal-wide">
+        <div class="modal-header">
+            <h2 class="modal-title">🔍 Skaner Archiwów (Aho-Corasick)</h2>
+            <button class="modal-close" data-close-modal="modal-scan">✕</button>
+        </div>
+        <div class="modal-body">
+            <p class="modal-desc">Wklej tekst z logami i podaj hasła (oddzielone przecinkami), aby błyskawicznie przeszukać archiwum.</p>
+            
+            <div style="display: flex; flex-direction: column; gap: 10px;">
+                <input id="scan-patterns" type="text" class="form-input" placeholder="Wpisz hasła..." value="szmugiel, reneta, ligol">
+                <textarea id="scan-text" class="decomp-text-output" style="height: 150px; background: #1c1412; color: #d4c4a8; border: 1px solid #4a3000; padding: 10px; width: 100%; border-radius: 4px;" placeholder="Wklej tutaj logi królestwa..."></textarea>
+            </div>
+
+            <div class="decomp-actions" style="margin-top: 15px;">
+                <button id="btn-run-scan" class="btn-run" style="width: 100%;">▶ Skanuj Logi</button>
+            </div>
+
+            <div id="scan-result" class="hidden" style="margin-top: 15px; padding: 15px; background: rgba(0,0,0,0.3); border-radius: 5px; border: 1px solid #3b0a00;">
+                </div>
+        </div>
+    </div>
+</div>
+
 
 <script type="module" src="app.js"></script>
 </body>
