@@ -22,58 +22,57 @@ namespace krasnoludki.Algorithms
 
         // 1. Budowa drzewa i słownika na podstawie tekstu
         public void BuildTree(string text)
+    {
+        if (string.IsNullOrEmpty(text)){
+        return;}
+        // Zliczanie czestotliwosci
+        var frequencies = new Dictionary<char, int>();
+        foreach (char c in text)
         {
-            // Zliczanie czestoltiwosci
-            var frequencies = new Dictionary<char, int>();
-            foreach (char c in text)
-            {
-                frequencies.TryGetValue(c, out int count);
-                frequencies[c] = count + 1;
-            }
-
-            // Im rzadziej wystepuje tym wyzszy priorytet
-            var priorityQueue = new PriorityQueue<HuffmanNode, int>();
-
-            foreach (var (symbol, frequency) in frequencies)
-            {
-                var leafNode = new HuffmanNode { Symbol = symbol, Frequency = frequency };
-                priorityQueue.Enqueue(leafNode, priority: frequency);
-            }
-
-            // zabezpieczenie: tekst z jednym unikalnym znakiem
-            if (priorityQueue.Count == 1)
-            {
-                var dummy = new HuffmanNode { Symbol = '\0', Frequency = 0 };
-                priorityQueue.Enqueue(dummy, priority: 0);
-            }
-
-            // O(n log n) - wstawianie odbywa sie w logn
-            while (priorityQueue.Count > 1)
-            {
-                // dwa wezly najrzadfziej wystepujace
-                priorityQueue.Dequeue(out HuffmanNode left, out int leftFreq);
-                priorityQueue.Dequeue(out HuffmanNode right, out int rightFreq);
-
-                // nowy wezel (np 55 laczy 25 i 30)
-                var parent = new HuffmanNode
-                {
-                    Symbol    = '*',
-                    Frequency = leftFreq + rightFreq,
-                    Left      = left,
-                    Right     = right,
-                };
-
-                // Wróć rodzica do kolejki z sumą częstotliwości jako priorytetem
-                priorityQueue.Enqueue(parent, priority: parent.Frequency);
-            }
-
-            // pobieramy korzen i tworzymy slownik kodow
-            root = priorityQueue.Dequeue();
-            huffmanDictionary.Clear();
-
-            if (root != null)
-                GenerateDictionary(root, currentCode: "");
+            frequencies.TryGetValue(c, out int count);
+            frequencies[c] = count + 1;
         }
+
+        // Im rzadziej wystepuje tym wyzszy priorytet
+        var priorityQueue = new PriorityQueue<HuffmanNode, int>();
+
+        foreach (var (symbol, frequency) in frequencies)
+        {
+            var leafNode = new HuffmanNode { Symbol = symbol, Frequency = frequency };
+            priorityQueue.Enqueue(leafNode, priority: frequency);
+        }
+
+        // zabezpieczenie: tekst z jednym unikalnym znakiem
+        if (priorityQueue.Count == 1)
+        {
+            var dummy = new HuffmanNode { Symbol = '\0', Frequency = 0 };
+            priorityQueue.Enqueue(dummy, priority: 0);
+        }
+
+        // O(n log n) - wstawianie odbywa sie w logn
+        while (priorityQueue.Count > 1)
+        {
+            HuffmanNode left  = priorityQueue.Dequeue();
+            HuffmanNode right = priorityQueue.Dequeue();
+
+            var parent = new HuffmanNode
+            {
+                Symbol    = '*',
+                Frequency = left.Frequency + right.Frequency,
+                Left      = left,
+                Right     = right,
+            };
+
+            priorityQueue.Enqueue(parent, priority: parent.Frequency);
+        }
+
+        // pobieramy korzen i tworzymy slownik kodow
+        root = priorityQueue.Dequeue();
+        huffmanDictionary.Clear();
+
+        if (root != null)
+            GenerateDictionary(root, currentCode: "");
+    }
 
         private void GenerateDictionary(HuffmanNode node, string currentCode)
         {
