@@ -23,44 +23,56 @@ namespace krasnoludki.Algorithms
         // 1. Budowa drzewa i słownika na podstawie tekstu
         public void BuildTree(string text)
         {
+            // Zliczanie czestoltiwosci
             var frequencies = new Dictionary<char, int>();
             foreach (char c in text)
             {
-                if (!frequencies.ContainsKey(c)) frequencies[c] = 0;
-                frequencies[c]++;
+                frequencies.TryGetValue(c, out int count);
+                frequencies[c] = count + 1;
             }
 
-            var nodes = frequencies.Select(kvp => new HuffmanNode { Symbol = kvp.Key, Frequency = kvp.Value }).ToList();
+            // Im rzadziej wystepuje tym wyzszy priorytet
+            var priorityQueue = new PriorityQueue<HuffmanNode, int>();
 
-            // Zabezpieczenie dla 1 unikalnego znaku
-            if (nodes.Count == 1)
-                nodes.Add(new HuffmanNode { Symbol = '\0', Frequency = 0 });
-
-            while (nodes.Count > 1)
+            foreach (var (symbol, frequency) in frequencies)
             {
-                nodes = nodes.OrderBy(n => n.Frequency).ToList();
+                var leafNode = new HuffmanNode { Symbol = symbol, Frequency = frequency };
+                priorityQueue.Enqueue(leafNode, priority: frequency);
+            }
 
-                var left = nodes[0];
-                var right = nodes[1];
+            // zabezpieczenie: tekst z jednym unikalnym znakiem
+            if (priorityQueue.Count == 1)
+            {
+                var dummy = new HuffmanNode { Symbol = '\0', Frequency = 0 };
+                priorityQueue.Enqueue(dummy, priority: 0);
+            }
 
+            // O(n log n) - wstawianie odbywa sie w logn
+            while (priorityQueue.Count > 1)
+            {
+                // dwa wezly najrzadfziej wystepujace
+                priorityQueue.Dequeue(out HuffmanNode left, out int leftFreq);
+                priorityQueue.Dequeue(out HuffmanNode right, out int rightFreq);
+
+                // nowy wezel (np 55 laczy 25 i 30)
                 var parent = new HuffmanNode
                 {
-                    Symbol = '*',
-                    Frequency = left.Frequency + right.Frequency,
-                    Left = left,
-                    Right = right
+                    Symbol    = '*',
+                    Frequency = leftFreq + rightFreq,
+                    Left      = left,
+                    Right     = right,
                 };
 
-                nodes.Remove(left);
-                nodes.Remove(right);
-                nodes.Add(parent);
+                // Wróć rodzica do kolejki z sumą częstotliwości jako priorytetem
+                priorityQueue.Enqueue(parent, priority: parent.Frequency);
             }
 
-            root = nodes.FirstOrDefault();
+            // pobieramy korzen i tworzymy slownik kodow
+            root = priorityQueue.Dequeue();
             huffmanDictionary.Clear();
 
             if (root != null)
-                GenerateDictionary(root, "");
+                GenerateDictionary(root, currentCode: "");
         }
 
         private void GenerateDictionary(HuffmanNode node, string currentCode)
