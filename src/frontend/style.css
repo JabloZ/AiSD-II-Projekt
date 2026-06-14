@@ -1652,3 +1652,83 @@ body {
     font-weight: bold;
     margin: 6px 0;
 }
+
+/* ─── Gen form ─────────────────────────────────── */
+
+.gen-form {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px 16px;
+    align-items: center;
+}
+
+.gen-label {
+    font-size: 0.8rem;
+    color: var(--text-dim);
+    font-family: 'Cinzel', serif;
+    letter-spacing: 0.03em;
+}
+
+.gen-input {
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.bd-legend {
+    margin-top: 10px;
+    padding: 10px 14px;
+    background: rgba(20, 10, 0, 0.7);
+    border: 1px solid rgba(139, 94, 10, 0.5);
+    border-radius: 6px;
+}
+
+.bd-legend-title {
+    margin: 0 0 8px;
+    font-family: 'Cinzel', serif;
+    font-size: 0.75rem;
+    color: #c9a84c;
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+}
+
+.bd-legend-grid {
+    display: grid;
+    grid-template-rows: repeat(10, auto);
+    grid-auto-flow: column;
+    grid-auto-columns: max-content;
+    gap: 3px 20px;
+    overflow-x: auto;
+    padding-bottom: 4px;
+}
+
+.bd-legend-row {
+    display: flex;
+    align-items: center;
+    gap: 7px;
+    padding: 3px 0;
+}
+
+.bd-legend-dot {
+    width: 12px;
+    height: 12px;
+    border-radius: 3px;
+    flex-shrink: 0;
+}
+
+.bd-legend-seg {
+    font-size: 0.75rem;
+    color: #8a7050;
+    white-space: nowrap;
+}
+
+.bd-legend-name {
+    font-size: 0.85rem;
+    color: #f0ddb0;
+    font-family: 'Crimson Pro', serif;
+    flex: 1;
+}
+
+.bd-legend-loud {
+    font-size: 0.75rem;
+    white-space: nowrap;
+}

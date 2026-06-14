@@ -14,4 +14,5 @@ record AssignRequestDto(List<HouseDto> Houses, List<MineDto> Mines);
 record AssignmentDto(string HouseId, string MineId, int Count, double Distance);
 record AssignResultDto(List<AssignmentDto> Assignments, List<string> Logs, double TotalDistance);
 record CreateDatasetDto(string Label);
+record GenerateDto(int Dwarfs, int Houses, int Mines, int Minerals);
 record ScanLogsDto(string Text, List<string> Patterns);
