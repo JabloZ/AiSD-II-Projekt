@@ -1,4 +1,5 @@
 import random
+import json
 
 def gen_insert_dwarfs(number_of_dwarves, number_of_deposits,number_of_houses):
     dwarfs_names = ["Kamin", "Zarok", "Karoz","Zyczliwek","Wromeo","Julianka","Bankus", "Hohelka","Chlapibrzuch","Moczypieta", "Milostek",
@@ -34,9 +35,11 @@ def gen_insert_deposits(number_of_deposits,amount_of_minerals,map_x,map_y):
             y = random.randint(0, map_y)
             file.write(f'INSERT INTO Deposits VALUES ({id+1},{mineral_id},{capacity},{x},{y});\n')
 
-def gen_insert_map(map_x,mapy_y):
+def gen_insert_border(map_x,map_y):
+    border = [{"x": 80, "y": 80}, {"x": map_x - 80, "y": 80}, {"x": map_x - 80, "y": map_y - 80}, {"x": 80, "y": map_y - 80}]
     with open("dane.txt", "a", encoding="utf-8") as file:
-        file.write(f'INSERT INTO Map VALUES ({map_x},{mapy_y});\n')
+        file.write(f'INSERT INTO Config (Key, Value) VALUES (\'border\', \'{json.dumps(border)}\'::jsonb) ON CONFLICT (Key) DO UPDATE SET Value = EXCLUDED.Value;\n')
+
 def gen_insert_minerals(amount_of_minerals):
     names = ["Zloto", "Srebro","Miedz","Zelazo","Diament","Wegiel","Szmaragd"]#max 7 mineralow jest puki co
     names_random = random.sample(names, len(names))
@@ -50,6 +53,7 @@ def gen_insert_houses(number_of_houses,map_x,map_y):
             x = random.randint(0, map_x)
             y = random.randint(0, map_y)
             file.write(f'INSERT INTO Houses VALUES ({id + 1},{x},{y});\n')
+
 def gen_insert_preferences(number_of_dwarves,amount_of_minerals):
     with open("dane.txt", "a", encoding="utf-8") as file:
         for id_dwrv in range(1, number_of_dwarves + 1):
@@ -61,12 +65,15 @@ def gen_insert_preferences(number_of_dwarves,amount_of_minerals):
                 multiplier = round(random.uniform(0.1, 2.0), 2)
 
                 file.write(f"INSERT INTO Preferences VALUES ({id_dwrv}, {id_minerl},{multiplier});\n")
+
 open("dane.txt", "w", encoding="utf-8").close()
 
 print("GENERATOR LOSOWYCH DANYCH DO BAZY DANYCH\n")
 print("Zasady: \n")
 print("1) Ilosc domow musi byc taka sama jak ilosc krasnali.\n")
 print("2) Jest maksymalnie 7 rodzajow mineralow.\n")
+
+schema = input("Podaj nazwe schematu (np. zbior1): ")
 
 number_of_dwarves = int(input("Podaj ilosc krasnali: "))
 number_of_houses = int(input("Podaj ilosc domow: "))
@@ -82,19 +89,12 @@ else:
     if(amount_of_minerals>7):
         print("Zle dane")
     else:
-        gen_insert_map(map_x, map_y)
+        with open("dane.txt", "a", encoding="utf-8") as file:
+            file.write(f'SET search_path = "{schema}";\n')
         gen_insert_minerals(amount_of_minerals)
         gen_insert_houses(number_of_houses,map_x,map_y)
         gen_insert_deposits(number_of_deposits,amount_of_minerals,map_x,map_y)
         gen_insert_dwarfs(number_of_dwarves,number_of_deposits,number_of_houses)
         gen_insert_preferences(number_of_dwarves,amount_of_minerals)
-
-
-
-
-
-
-
-
-
-
+        gen_insert_border(map_x,map_y)
+        print("Gotowe!")

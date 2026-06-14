@@ -24,6 +24,7 @@ var connStr = Environment.GetEnvironmentVariable("CONNECTION_STRING") ?? "";
 
 app.MapDataEndpoints(connStr);
 app.MapDatasetEndpoints(connStr);
+app.MapGenerateEndpoints(connStr);
 app.MapLogsEndpoints();
 
 app.Run("http://0.0.0.0:8001");

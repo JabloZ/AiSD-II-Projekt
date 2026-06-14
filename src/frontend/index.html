@@ -107,7 +107,7 @@
                 <span class="viz-label">Mapa królestwa</span>
             </div>
             <div class="map-viz-container">
-                <svg id="map-viz-svg" viewBox="0 0 900 650" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;max-height:480px;border-radius:6px"></svg>
+                <svg id="map-viz-svg" viewBox="0 0 900 650" preserveAspectRatio="xMidYMid meet" style="display:block;width:100%;max-height:700px;border-radius:6px"></svg>
             </div>
         </div>
 
@@ -276,6 +276,29 @@
                     <code id="modal-space-complexity" class="complexity-value"></code>
                 </div>
             </div>
+        </div>
+    </div>
+</div>
+
+<!-- ════════════════════════ MODAL: GENERUJ DANE ════════════════════════ -->
+<div id="modal-generate" class="modal-overlay hidden">
+    <div class="modal">
+        <div class="modal-header">
+            <h2 class="modal-title">Generuj dane — <em id="modal-gen-label"></em></h2>
+            <button class="modal-close" data-close-modal="modal-generate">✕</button>
+        </div>
+        <div class="modal-body">
+            <div class="gen-form">
+                <label class="gen-label">Krasnoludki</label>
+                <input id="gen-dwarfs"   type="number" min="1" max="500" value="20" class="form-input gen-input"/>
+                <label class="gen-label">Domki</label>
+                <input id="gen-houses"   type="number" min="1" max="100" value="5"  class="form-input gen-input"/>
+                <label class="gen-label">Kopalnie</label>
+                <input id="gen-mines"    type="number" min="1" max="100" value="8"  class="form-input gen-input"/>
+                <label class="gen-label">Minerały (max 7)</label>
+                <input id="gen-minerals" type="number" min="1" max="7"   value="4"  class="form-input gen-input"/>
+            </div>
+            <button id="btn-generate-confirm" class="btn-run" style="width:100%;margin-top:16px">Generuj dane</button>
         </div>
     </div>
 </div>

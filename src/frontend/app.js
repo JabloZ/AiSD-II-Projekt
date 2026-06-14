@@ -493,6 +493,7 @@ async function renderDatasetList() {
                     <span class="dataset-meta">${isActive ? '● aktywny' : ds.name}</span>
                 </div>
                 <div class="dataset-actions">
+                    <button class="btn-sm btn-outline-sm" data-generate="${escHtml(ds.name)}" data-generate-label="${escHtml(ds.label)}">Generuj</button>
                     ${!isActive ? `<button class="btn-sm btn-primary-sm" data-switch="${escHtml(ds.name)}">Wybierz</button>` : ''}
                     ${data.datasets.length > 1 && !isActive
                         ? `<button class="btn-sm btn-danger-sm" data-delete="${escHtml(ds.name)}">✕</button>`
@@ -517,6 +518,12 @@ async function renderDatasetList() {
                 if (!confirm(`Usunąć zbiór "${btn.dataset.delete}"?`)) return;
                 await fetch(`${API_URL}/api/datasets/${btn.dataset.delete}`, { method: 'DELETE' });
                 await renderDatasetList();
+            });
+        });
+
+        container.querySelectorAll('[data-generate]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                openGenerateModal(btn.dataset.generate, btn.dataset.generateLabel);
             });
         });
 
@@ -728,8 +735,10 @@ function renderBipartiteGraph(dataset, assignments) {
     svg.setAttribute('viewBox', `0 0 ${svgW} ${svgH}`);
     svg.innerHTML = '';
 
-    function dY(i) { return 40 + i * ROW; }
-    function mY(i) { return 40 + i * ROW; }
+    const dOffset = Math.max(0, (sortedMines.length - dwarfRows.length) / 2 * ROW);
+    const mOffset = Math.max(0, (dwarfRows.length - sortedMines.length) / 2 * ROW);
+    function dY(i) { return 40 + dOffset + i * ROW; }
+    function mY(i) { return 40 + mOffset + i * ROW; }
 
     const assignedMines = new Set(assignments.map(a => a.mineId));
 
@@ -861,16 +870,24 @@ function renderMapViz(dataset, assignments) {
     }
 
     const assignedHouses = new Set(assignments.map(a => a.houseId));
+    const simplified = dataset.houses.length > 75;
     for (const h of dataset.houses) {
         if (!h.x && !h.y) continue;
         const ok = assignedHouses.has(h.id);
-        const g  = el('g', { transform: `translate(${h.x},${h.y})`, style: ok ? '' : '--roof:#2a0a00;--wall:#4a3000' });
-        g.innerHTML = `
-            <use href="#sym-house"/>
-            <rect x="-28" y="12" width="56" height="13" rx="3" fill="rgba(30,15,0,0.75)"/>
-            <text y="22" text-anchor="middle" font-size="9" fill="#fde68a" font-family="serif" font-weight="bold" pointer-events="none">${h.name || `D${h.id}`}</text>
-        `;
-        svg.appendChild(g);
+        if (simplified) {
+            const dwarfCount = assignments.filter(a => a.houseId === h.id).reduce((s, a) => s + a.count, 0);
+            svg.appendChild(el('circle', { cx: h.x, cy: h.y, r: '6', fill: ok ? '#8b6914' : '#2a0a00', stroke: ok ? '#fde68a' : '#4a3000', 'stroke-width': '1.5' }));
+            if (dwarfCount > 0)
+                svg.appendChild(el('text', { x: h.x, y: h.y - 9, 'text-anchor': 'middle', 'font-size': '8', fill: '#fde68a', 'font-family': 'serif', 'pointer-events': 'none' }, dwarfCount));
+        } else {
+            const g = el('g', { transform: `translate(${h.x},${h.y})`, style: ok ? '' : '--roof:#2a0a00;--wall:#4a3000' });
+            g.innerHTML = `
+                <use href="#sym-house"/>
+                <rect x="-28" y="12" width="56" height="13" rx="3" fill="rgba(30,15,0,0.75)"/>
+                <text y="22" text-anchor="middle" font-size="9" fill="#fde68a" font-family="serif" font-weight="bold" pointer-events="none">${h.name || `D${h.id}`}</text>
+            `;
+            svg.appendChild(g);
+        }
     }
 
     const assignedMines = new Set(assignments.map(a => a.mineId));
@@ -878,13 +895,17 @@ function renderMapViz(dataset, assignments) {
         if (!m.x && !m.y) continue;
         const color = MINERAL_COLORS[m.mineral] || '#94a3b8';
         const ok    = assignedMines.has(m.id);
-        const g     = el('g', { transform: `translate(${m.x},${m.y})`, style: `color:${color}${ok ? '' : ';opacity:0.35'}` });
-        g.innerHTML = `
-            <use href="#sym-mine"/>
-            <rect x="-22" y="12" width="44" height="13" rx="3" fill="rgba(30,15,0,0.75)"/>
-            <text y="22" text-anchor="middle" font-size="9" fill="#fde68a" font-family="serif" font-weight="bold" pointer-events="none">${m.mineral || '?'}</text>
-        `;
-        svg.appendChild(g);
+        if (simplified) {
+            svg.appendChild(el('circle', { cx: m.x, cy: m.y, r: '6', fill: color + (ok ? 'bb' : '33'), stroke: color, 'stroke-width': '1.5' }));
+        } else {
+            const g = el('g', { transform: `translate(${m.x},${m.y})`, style: `color:${color}${ok ? '' : ';opacity:0.35'}` });
+            g.innerHTML = `
+                <use href="#sym-mine"/>
+                <rect x="-22" y="12" width="44" height="13" rx="3" fill="rgba(30,15,0,0.75)"/>
+                <text y="22" text-anchor="middle" font-size="9" fill="#fde68a" font-family="serif" font-weight="bold" pointer-events="none">${m.mineral || '?'}</text>
+            `;
+            svg.appendChild(g);
+        }
     }
 
     svg.appendChild(el('rect', { width: 900, height: 650, fill: 'url(#mvv)', 'pointer-events': 'none' }));
@@ -1075,13 +1096,6 @@ function renderBorderDefenseViz(dataset, segments) {
             svg.appendChild(el('circle', { cx, cy, r: '16', fill: 'rgba(20,10,0,0.85)', stroke: color, 'stroke-width': '2' }));
             svg.appendChild(el('text',   { x: cx, y: cy - 3, 'text-anchor': 'middle', 'font-size': '13', fill: color, 'font-family': 'serif', 'pointer-events': 'none' }, '📣'));
             svg.appendChild(el('text',   { x: cx, y: cy + 12, 'text-anchor': 'middle', 'font-size': '7.5', fill: color, 'font-family': 'serif', 'font-weight': 'bold', 'pointer-events': 'none' }, seg.commander.name.slice(0, 6)));
-
-            // Tooltip — boks z informacją
-            const bx = Math.min(Math.max(cx - 55, 5), 790);
-            const by = Math.max(cy - 60, 5);
-            svg.appendChild(el('rect',  { x: bx, y: by, width: 110, height: 38, rx: 4, fill: 'rgba(20,10,0,0.82)', stroke: color, 'stroke-width': '1', 'pointer-events': 'none' }));
-            svg.appendChild(el('text',  { x: bx + 55, y: by + 14, 'text-anchor': 'middle', 'font-size': '9', fill: '#fde68a', 'font-family': 'serif', 'font-weight': 'bold', 'pointer-events': 'none' }, `Seg. ${si + 1}: ${seg.commander.name}`));
-            svg.appendChild(el('text',  { x: bx + 55, y: by + 28, 'text-anchor': 'middle', 'font-size': '8', fill: color, 'font-family': 'serif', 'pointer-events': 'none' }, `głośność: ${seg.commander.loudness} | ${seg.commander.houseName}`));
         }
     }
 
@@ -1122,18 +1136,28 @@ function renderBorderDefenseViz(dataset, segments) {
 
     svg.appendChild(el('rect', { width: 900, height: 650, fill: 'url(#mvv3)', 'pointer-events': 'none' }));
 
-    // Legenda segmentów
-    const legX = 20, legY0 = 540;
-    svg.appendChild(el('rect', { x: legX - 5, y: legY0 - 18, width: 200, height: segments.length * 18 + 22, rx: 4, fill: 'rgba(20,10,0,0.78)' }));
-    svg.appendChild(el('text', { x: legX + 95, y: legY0 - 4, 'text-anchor': 'middle', 'font-size': '9', fill: '#c9a84c', 'font-family': 'Georgia,serif', 'letter-spacing': '1' }, 'DOWÓDCY SEGMENTÓW'));
-    for (let i = 0; i < segments.length; i++) {
-        const seg = segments[i], color = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
-        const y = legY0 + 12 + i * 18;
-        svg.appendChild(el('rect',  { x: legX, y: y - 8, width: 14, height: 8, rx: 2, fill: color, opacity: '0.8' }));
-        svg.appendChild(el('text',  { x: legX + 20, y: y, 'font-size': '9', fill: '#e8d5a3', 'font-family': 'serif' }, `Seg. ${i + 1}: ${seg.commander.name} (🔊${seg.commander.loudness})`));
-    }
-
     section.classList.remove('hidden');
+
+    let legendEl = section.querySelector('.bd-legend');
+    if (!legendEl) {
+        legendEl = document.createElement('div');
+        legendEl.className = 'bd-legend';
+        section.appendChild(legendEl);
+    }
+    legendEl.innerHTML = `
+        <p class="bd-legend-title">Dowódcy segmentów</p>
+        <div class="bd-legend-grid">
+            ${segments.map((seg, i) => {
+                const color = SEGMENT_COLORS[i % SEGMENT_COLORS.length];
+                return `<div class="bd-legend-row">
+                    <span class="bd-legend-dot" style="background:${color}"></span>
+                    <span class="bd-legend-seg">Seg. ${i + 1}</span>
+                    <span class="bd-legend-name">${seg.commander.name}</span>
+                    <span class="bd-legend-loud" style="color:${color}">🔊 ${seg.commander.loudness}</span>
+                </div>`;
+            }).join('')}
+        </div>
+    `;
 }
 
 
@@ -1469,6 +1493,62 @@ if (btnRunScan) {
         }
     });
 }
+
+
+// ═══════════════════════════════════════════════════════════════
+// GENERATOR DANYCH
+// ═══════════════════════════════════════════════════════════════
+
+let _generateTargetName = '';
+
+function openGenerateModal(schemaName, label) {
+    _generateTargetName = schemaName;
+    document.getElementById('modal-gen-label').textContent = label || schemaName;
+    document.getElementById('modal-generate').classList.remove('hidden');
+}
+
+document.getElementById('btn-generate-confirm').addEventListener('click', async () => {
+    const dwarfs   = parseInt(document.getElementById('gen-dwarfs').value)   || 0;
+    const houses   = parseInt(document.getElementById('gen-houses').value)   || 0;
+    const mines    = parseInt(document.getElementById('gen-mines').value)    || 0;
+    const minerals = parseInt(document.getElementById('gen-minerals').value) || 0;
+
+    if (dwarfs < 1 || houses < 1 || mines < 1 || minerals < 1 || minerals > 7) {
+        alert('Sprawdź dane: krasnoludki/domki/kopalnie ≥ 1, minerały 1–7.');
+        return;
+    }
+
+    const btn = document.getElementById('btn-generate-confirm');
+    btn.disabled    = true;
+    btn.textContent = '⏳ Generowanie...';
+
+    try {
+        const res = await fetch(`${API_URL}/api/datasets/${_generateTargetName}/generate`, {
+            method:  'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body:    JSON.stringify({ dwarfs, houses, mines, minerals }),
+        });
+
+        if (!res.ok) {
+            const text = await res.text();
+            alert(`Błąd generowania: ${text}`);
+            return;
+        }
+
+        document.getElementById('modal-generate').classList.add('hidden');
+
+        // Jeśli generowaliśmy dla aktywnego zbioru — odśwież dane
+        if (_generateTargetName === activeDatasetName) {
+            await loadDbData();
+            renderDbStats();
+        }
+    } catch (e) {
+        alert(`Błąd połączenia: ${e.message}`);
+    } finally {
+        btn.disabled    = false;
+        btn.textContent = 'Generuj dane';
+    }
+});
 
 // ═══════════════════════════════════════════════════════════════
 // INICJALIZACJA
